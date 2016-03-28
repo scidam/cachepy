@@ -91,7 +91,7 @@ class BaseBackend(object):
         try: 
             res = self._fromstring(self[hash], key=key)
         except KeyError:
-            warnings.warn("Key is absent...", RuntimeWarning)
+            pass
         if isinstance(res, tuple):
             updated = (res[0], res[1], res[2], res[3]+1)
             self[hash] = self._tostring(updated[0], expired=updated[1], key=key, noc=updated[2], ncalls=updated[3])
@@ -162,9 +162,8 @@ class BaseCache(object):
         self.key = key
         self.noc = noc
 
-    def __call__(self, func, *args, **kwargs):
+    def __call__(self, func):
         """Decorator function for caching results of a callable."""
-        print args, kwargs
         def wrapper(*args, **kwargs):
             """Function wrapping the decorated function."""
             chash = self._hash(func, *args, **kwargs)
@@ -173,9 +172,8 @@ class BaseCache(object):
                 return result
             else:
                 result =  func(*args, **kwargs)
-                self.backend.store_data(hash, result, key=self.key, ttl=self.ttl, noc=self.noc, ncalls=0)
+                self.backend.store_data(chash, result, key=self.key, ttl=self.ttl, noc=self.noc, ncalls=0)
             return result
- 
         return wrapper
 
 
