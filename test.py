@@ -3,7 +3,7 @@ import time
 import unittest
 import datetime
 
-from __init__ import BaseCache, Backend, MemBackend
+from __init__ import BaseCache, Backend, MemBackend, FileBackend
 from crypter import AESCipher
 
 try:
@@ -16,8 +16,6 @@ try:
     crypto = True
 except ImportError:
     crypto = False
-
-
 
 # ------------------- Simple functions to be cached --------------
 def function_to_cache():
@@ -123,7 +121,7 @@ class BaseCacheHasherTests(unittest.TestCase):
 class BackendTests(unittest.TestCase):
     def setUp(self):
         self.curmembackend = MemBackend()
-#         self.filebackend = Backend('filecache.dat')
+        self.filebackend = FileBackend('filecache.dat')
         myhash = hashlib.md5('myhash').hexdigest()
         myhash += hashlib.md5(myhash).hexdigest()
         self.myhash = myhash
@@ -148,19 +146,51 @@ class BackendTests(unittest.TestCase):
         for x in range(7):
             self.curmembackend.get_data(self.myhash, key='empty', noc=4)
         self.assertIsNone(self.curmembackend.get_data(self.myhash, key='empty'))
-    
+
     def test_store_to_mem_with_key_ttl(self):
         self.curmembackend.store_data(self.myhash, 'sample text', key='empty', noc=0, ttl=1)
         self.assertEqual(self.curmembackend.get_data(self.myhash, key='empty', ttl=1), 'sample text')
         time.sleep(2)
         self.assertIsNone(self.curmembackend.get_data(self.myhash, key='empty', ttl=1))
 
-
     def test_valid_keys_mem(self):
         self.curmembackend['wrong key'] = 'nothing'
         self.assertEqual(set(self.curmembackend.keys()), set(['wrong key']))
         self.curmembackend[self.myhash] = 'nothing'
         self.assertEqual(self.curmembackend.valid_keys, [self.myhash])
+
+    def test_store_to_file(self):
+        self.filebackend.store_data(self.myhash, 'sample text')
+        self.assertEqual(self.filebackend.get_data(self.myhash), 'sample text')
+
+    def test_store_to_file_with_ttl(self):
+        self.filebackend.store_data(self.myhash, 'sample text', ttl=1)
+        self.assertEqual(self.filebackend.get_data(self.myhash), 'sample text')
+        time.sleep(2)
+        self.assertIsNone(self.filebackend.get_data(self.myhash, ttl=1))
+
+    def test_store_to_file_with_key(self):
+        self.filebackend.store_data(self.myhash, 'sample text', key='empty')
+        self.assertEqual(self.filebackend.get_data(self.myhash, key='empty'), 'sample text')
+
+    def test_store_to_file_with_key_noc(self):
+        self.filebackend.store_data(self.myhash, 'sample text', key='empty', noc=4)
+        self.assertEqual(self.filebackend.get_data(self.myhash, key='empty', noc=4), 'sample text')
+        for x in range(7):
+            self.filebackend.get_data(self.myhash, key='empty', noc=4)
+        self.assertIsNone(self.filebackend.get_data(self.myhash, key='empty', noc=4))
+
+    def test_store_to_file_with_key_ttl(self):
+        self.filebackend.store_data(self.myhash, 'sample text', key='empty', noc=0, ttl=1)
+        self.assertEqual(self.filebackend.get_data(self.myhash, key='empty', ttl=1), 'sample text')
+        time.sleep(2)
+        self.assertIsNone(self.filebackend.get_data(self.myhash, key='empty', ttl=1))
+
+    def test_valid_keys_file(self):
+        self.filebackend['wrong key'] = 'nothing'
+        self.assertEqual(set(self.filebackend.keys()), set(['wrong key']))
+        self.filebackend[self.myhash] = 'nothing'
+        self.assertEqual(self.filebackend.valid_keys, [self.myhash])
 
 
 @unittest.skipIf(not crypto, "Skipped: Pycrypto not installed.")

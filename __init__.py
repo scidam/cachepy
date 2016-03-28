@@ -3,6 +3,7 @@ import hashlib
 import warnings
 import datetime
 import base64
+import shelve
 
 try:
     basestring = basestring
@@ -76,21 +77,14 @@ class BaseBackend(object):
         else:
             result = _load_safely_or_none(sdata)
         return result
-
-
-class MemBackend(dict, BaseBackend):
-
-    def store_data(self, hash, data, key='', ttl=0, noc=0, ncalls=0):
-        if ttl:
-            _expired = datetime.datetime.now() + datetime.timedelta(seconds=ttl)
-        else: 
-            _expired = datetime.datetime.now()
-        self[hash] = self._tostring(data, key=key, expired=_expired, noc=noc, ncalls=ncalls)
-
+    
     @property
     def valid_keys(self):
         '''Get valid keys'''
         return [item for item in self.keys() if hashlib.md5(item[:-32]).hexdigest() == item[-32:]]
+
+    def store_data(self, hash, data, key, expired, noc, ncalls):
+        self[hash] = self._tostring(data, key=key, expired=expired, noc=noc, ncalls=ncalls)
 
     def get_data(self, hash, key='', ttl=0, noc=0):
         res = None
@@ -110,6 +104,36 @@ class MemBackend(dict, BaseBackend):
         return res[0] if res else None
 
 
+class MemBackend(dict, BaseBackend):
+
+    def store_data(self, hash, data, key='', ttl=0, noc=0, ncalls=0):
+        if ttl:
+            _expired = datetime.datetime.now() + datetime.timedelta(seconds=ttl)
+        else: 
+            _expired = datetime.datetime.now()
+        super(MemBackend, self).store_data(hash, data, key=key, expired=_expired, noc=noc, ncalls=ncalls)
+
+    def get_data(self, hash, key='', ttl=0, noc=0):
+        return super(MemBackend, self).get_data(hash, key=key, ttl=ttl, noc=noc)
+
+
+class FileBackend(shelve.Shelf, MemBackend):
+
+    def __init__(self, filename, flag='c', protocol=None, writeback=False):
+        try:
+            import anydbm
+        except ImportError:
+            import dbm as anydbm
+        shelve.Shelf.__init__(self, anydbm.open(filename, flag), protocol, writeback)
+
+    def store_data(self, hash, data, key='', ttl=0, noc=0, ncalls=0):
+        super(FileBackend, self).store_data(hash, data, key=key, ttl=ttl, noc=noc, ncalls=ncalls)
+        self.sync()
+
+    def get_data(self, hash, key='', ttl=0, noc=0):
+        result =  super(FileBackend, self).get_data(hash, key=key, ttl=ttl, noc=noc)
+        self.sync()
+        return result if self.has_key(hash) else None
 
 
 class Backend(object):
@@ -129,35 +153,30 @@ class Backend(object):
 class BaseCache(object):
     """Store and get function results to."""
 
-    def __init__(self, backend, key='', ttl=0):
-        self.backend = backend
+    def __init__(self, backend=None, key='', ttl=0, noc=0):
+        if isinstance(backend, basestring):
+            self.backend = FileBackend(backend)
+        else:
+            self.backend = MemBackend()
         self.ttl = ttl
         self.key = key
+        self.noc = noc
 
-#     def __call__(self, func):
-#         """Decorator function for caching results of a callable."""
-# 
-#         def wrapper(*args, **kwargs):
-#             """Function wrapping the decorated function."""
-# 
-#             ckey = [func.__name__] # parameter hash
-#             for a in args:
-#                 ckey.append(self.__repr(a))
-#             for k in sorted(kwargs):
-#                 ckey.append("%s:%s" % (k, self.__repr(kwargs[k])))
-#             ckey = hashlib.sha1(''.join(ckey).encode("UTF8")).hexdigest()
-# 
-#             if ckey in self.__cache:
-#                 result = self.__cache[ckey]
-#             else:
-#                 result = func(*args, **kwargs)
-#                 self.__cache[ckey] = result
-#             self.__cache["%s:atime" % ckey] = time.time() # access time
-#             if self.__livesync:
-#                 self.__cache.sync()
-#             return result
-# 
-#         return wrapper
+    def __call__(self, func, *args, **kwargs):
+        """Decorator function for caching results of a callable."""
+        print args, kwargs
+        def wrapper(*args, **kwargs):
+            """Function wrapping the decorated function."""
+            chash = self._hash(func, *args, **kwargs)
+            result = self.backend.get_data(chash, key=self.key, ttl=self.ttl, noc=self.noc)
+            if result:
+                return result
+            else:
+                result =  func(*args, **kwargs)
+                self.backend.store_data(hash, result, key=self.key, ttl=self.ttl, noc=self.noc, ncalls=0)
+            return result
+ 
+        return wrapper
 
 
     def _hash(self, func, *args, **kwargs):
