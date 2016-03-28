@@ -1,8 +1,9 @@
 import hashlib
 import time
 import unittest
+import datetime
 
-from __init__ import BaseCache, Backend
+from __init__ import BaseCache, Backend, MemBackend
 from crypter import AESCipher
 
 try:
@@ -121,24 +122,45 @@ class BaseCacheHasherTests(unittest.TestCase):
 
 class BackendTests(unittest.TestCase):
     def setUp(self):
-        curmembackend = Backend()
-        filebackend = Backend('filecache.dat')
+        self.curmembackend = MemBackend()
+#         self.filebackend = Backend('filecache.dat')
+        myhash = hashlib.md5('myhash').hexdigest()
+        myhash += hashlib.md5(myhash).hexdigest()
+        self.myhash = myhash
 
     def test_store_to_mem(self):
-        self.curmembackend.store({'myhash': 'sample text'})
-        self.assertEqual(self.curmembackend['mykey'], pickle.dumps(('sample text', 0, '')))
-        self.assertEqual(self.curmembackend.get('mykey'), 'sample text')
+        self.curmembackend.store_data(self.myhash, 'sample text')
+        self.assertEqual(self.curmembackend.get_data(self.myhash), 'sample text')
 
     def test_store_to_mem_with_ttl(self):
-        self.curmembackend.store({'myhash': 'sample text'}, ttl=2)
-        self.assertEqual(self.curmembackend['mykey'], pickle.dumps(('sample text', 2, '')))
+        self.curmembackend.store_data(self.myhash, 'sample text', ttl=1)
+        self.assertEqual(self.curmembackend.get_data(self.myhash), 'sample text')
+        time.sleep(2)
+        self.assertIsNone(self.curmembackend.get_data(self.myhash, ttl=1))
 
     def test_store_to_mem_with_key(self):
-        self.curmembackend.store({'myhash': 'sample text'}, key='empty')
-        if not crypto:
-            self.assertEqual(self.curmembackend['mykey'], pickle.dumps(('sample text', 0, 'empty')))
-        else:
-            self.assertEqual(self.curmembackend['mykey'], pickle.dumps(('sample text', 0, 'empty')))
+        self.curmembackend.store_data(self.myhash, 'sample text', key='empty')
+        self.assertEqual(self.curmembackend.get_data(self.myhash, key='empty'), 'sample text')
+
+    def test_store_to_mem_with_key_noc(self):
+        self.curmembackend.store_data(self.myhash, 'sample text', key='empty', noc=4)
+        self.assertEqual(self.curmembackend.get_data(self.myhash, key='empty'), 'sample text')
+        for x in range(7):
+            self.curmembackend.get_data(self.myhash, key='empty', noc=4)
+        self.assertIsNone(self.curmembackend.get_data(self.myhash, key='empty'))
+    
+    def test_store_to_mem_with_key_ttl(self):
+        self.curmembackend.store_data(self.myhash, 'sample text', key='empty', noc=0, ttl=1)
+        self.assertEqual(self.curmembackend.get_data(self.myhash, key='empty', ttl=1), 'sample text')
+        time.sleep(2)
+        self.assertIsNone(self.curmembackend.get_data(self.myhash, key='empty', ttl=1))
+
+
+    def test_valid_keys_mem(self):
+        self.curmembackend['wrong key'] = 'nothing'
+        self.assertEqual(set(self.curmembackend.keys()), set(['wrong key']))
+        self.curmembackend[self.myhash] = 'nothing'
+        self.assertEqual(self.curmembackend.valid_keys, [self.myhash])
 
 
 @unittest.skipIf(not crypto, "Skipped: Pycrypto not installed.")
