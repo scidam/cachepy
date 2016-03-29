@@ -3,8 +3,7 @@ import time
 import unittest
 import datetime
 
-from __init__ import BaseCache, Backend, MemBackend, FileBackend
-from crypter import AESCipher
+from __init__ import *
 
 try:
     import cPickle as pickle
@@ -12,31 +11,45 @@ except ImportError:
     import pickle
 
 try:
-    import Crypto
+    from crypter import AESCipher
     crypto = True
 except ImportError:
     crypto = False
+
+try:
+    import numpy as np 
+except ImportError:
+    np = None
+
 
 # ------------------- Simple functions to be cached --------------
 def function_to_cache():
     return [1, 2, 3, 4, 5]
 
+
 def function_with_pars(x):
     return [x]*3
+
 
 def function_with_kwargs(x, default='test'):
     return [x, default]
 
-# ----------------------------------------------------------------
 
+def function_returns_dict(x):
+    return {'output': x}
+
+
+def function_returns_random_numpy(size):
+    return np.random.rand(size, size)
+# ----------------------------------------------------------------
 
 class BaseCacheHasherTests(unittest.TestCase):
 
     def setUp(self):
-        self.mycache = BaseCache(None)
-        self.mycache_ttl = BaseCache(None, ttl=5)
-        self.mycache_key = BaseCache(None, key='nothing')
-        self.mycache_key_ttl = BaseCache(None, ttl=5, key='nothing')
+        self.mycache = Cache(None)
+        self.mycache_ttl = Cache(None, ttl=5)
+        self.mycache_key = Cache(None, key='nothing')
+        self.mycache_key_ttl = Cache(None, ttl=5, key='nothing')
         self.hasher = hashlib.sha256()
 
     def test_func_hash_simple(self):
@@ -118,79 +131,133 @@ class BaseCacheHasherTests(unittest.TestCase):
         self.assertEqual(self.hasher.hexdigest(), computed)
 
 
-class BackendTests(unittest.TestCase):
+class BaseCacheToMemTests(unittest.TestCase):
+
     def setUp(self):
-        self.curmembackend = MemBackend()
-        self.filebackend = FileBackend('filecache.dat')
+        self.decorator = Cache()
+        self.decorator_key = Cache(key='a')
+        self.decorator_key_ttl_noc = Cache(key='a', ttl=1, noc=2)
+
+    def test_simple_function(self):
+        simple = self.decorator(function_to_cache)
+        self.assertEqual(simple(), [1,2,3,4,5])
+
+    def test_simple_function_key(self):
+        simple = self.decorator_key(function_to_cache)
+        self.assertEqual(simple(), [1,2,3,4,5])
+
+    def test_simple_function_ttl_noc(self):
+        simple = self.decorator_key_ttl_noc(function_to_cache)
+        self.assertEqual(simple(), [1,2,3,4,5])
+
+    def test_function_returns_dict(self):
+        dictfun = self.decorator(function_returns_dict)
+        self.assertEqual(dictfun(2), {'output': 2})
+
+    @unittest.skipIf(not np, "Skipped: Numpy not installed.")
+    def test_function_returns_np(self):
+         npfun = self.decorator(function_returns_random_numpy)
+         self.assertEqual(np.shape(npfun(3)), (3,3))
+         np.testing.assert_array_equal(npfun(3), npfun(3))
+
+    @unittest.skipIf(not np, "Skipped: Numpy not installed.")    
+    def test_function_returns_np_noc(self):
+         npfun = self.decorator_key_ttl_noc(function_returns_random_numpy)
+         res = npfun(2)
+         res1 = npfun(2)
+         res2 = npfun(2)
+         np.testing.assert_array_equal(res, res1)
+         self.assertFalse((res==res2).all())
+    
+    @unittest.skipIf(not np, "Skipped: Numpy not installed.")    
+    def test_function_returns_np_ttl(self):
+         npfun = self.decorator_key_ttl_noc(function_returns_random_numpy)
+         res = npfun(2)
+         res1 = npfun(2)
+         time.sleep(2)
+         res2 = npfun(2)
+         np.testing.assert_array_equal(res, res1)
+         self.assertFalse((res==res2).all())
+
+
+class BaseCacheToFileTests(BaseCacheToMemTests):
+
+    def clear_storage(self):
+        import os 
+        try: 
+            os.remove('testfilecache.dat')
+        except (IOError, OSError):
+            pass
+
+    def setUp(self):
+        self.decorator = Cache('testfilecache.dat')
+        self.decorator_key = Cache('testfilecache.dat', key='a')
+        self.decorator_key_ttl_noc = Cache('testfilecache.dat', key='a', ttl=1, noc=2)
+
+    def tearDown(self):
+        self.clear_storage()
+
+
+class MemBackendTests(unittest.TestCase):
+
+    def setUp(self):
+        self.backend = MemBackend()
         myhash = hashlib.md5('myhash').hexdigest()
         myhash += hashlib.md5(myhash).hexdigest()
         self.myhash = myhash
 
     def test_store_to_mem(self):
-        self.curmembackend.store_data(self.myhash, 'sample text')
-        self.assertEqual(self.curmembackend.get_data(self.myhash), 'sample text')
+        self.backend.store_data(self.myhash, 'sample text')
+        self.assertEqual(self.backend.get_data(self.myhash), 'sample text')
 
     def test_store_to_mem_with_ttl(self):
-        self.curmembackend.store_data(self.myhash, 'sample text', ttl=1)
-        self.assertEqual(self.curmembackend.get_data(self.myhash), 'sample text')
+        self.backend.store_data(self.myhash, 'sample text', ttl=1)
+        self.assertEqual(self.backend.get_data(self.myhash), 'sample text')
         time.sleep(2)
-        self.assertIsNone(self.curmembackend.get_data(self.myhash, ttl=1))
+        self.assertIsNone(self.backend.get_data(self.myhash, ttl=1))
 
     def test_store_to_mem_with_key(self):
-        self.curmembackend.store_data(self.myhash, 'sample text', key='empty')
-        self.assertEqual(self.curmembackend.get_data(self.myhash, key='empty'), 'sample text')
+        self.backend.store_data(self.myhash, 'sample text', key='empty')
+        self.assertEqual(self.backend.get_data(self.myhash, key='empty'), 'sample text')
 
     def test_store_to_mem_with_key_noc(self):
-        self.curmembackend.store_data(self.myhash, 'sample text', key='empty', noc=4)
-        self.assertEqual(self.curmembackend.get_data(self.myhash, key='empty'), 'sample text')
+        self.backend.store_data(self.myhash, 'sample text', key='empty', noc=4)
+        self.assertEqual(self.backend.get_data(self.myhash, key='empty'), 'sample text')
         for x in range(7):
-            self.curmembackend.get_data(self.myhash, key='empty', noc=4)
-        self.assertIsNone(self.curmembackend.get_data(self.myhash, key='empty'))
+            self.backend.get_data(self.myhash, key='empty', noc=4)
+        self.assertIsNone(self.backend.get_data(self.myhash, key='empty'))
 
     def test_store_to_mem_with_key_ttl(self):
-        self.curmembackend.store_data(self.myhash, 'sample text', key='empty', noc=0, ttl=1)
-        self.assertEqual(self.curmembackend.get_data(self.myhash, key='empty', ttl=1), 'sample text')
+        self.backend.store_data(self.myhash, 'sample text', key='empty', noc=0, ttl=1)
+        self.assertEqual(self.backend.get_data(self.myhash, key='empty', ttl=1), 'sample text')
         time.sleep(2)
-        self.assertIsNone(self.curmembackend.get_data(self.myhash, key='empty', ttl=1))
+        self.assertIsNone(self.backend.get_data(self.myhash, key='empty', ttl=1))
 
     def test_valid_keys_mem(self):
-        self.curmembackend['wrong key'] = 'nothing'
-        self.assertEqual(set(self.curmembackend.keys()), set(['wrong key']))
-        self.curmembackend[self.myhash] = 'nothing'
-        self.assertEqual(self.curmembackend.valid_keys, [self.myhash])
+        self.backend['wrong key'] = 'nothing'
+        self.assertEqual(set(self.backend.keys()), set(['wrong key']))
+        self.backend[self.myhash] = 'nothing'
+        self.assertEqual(self.backend.valid_keys, [self.myhash])
 
-    def test_store_to_file(self):
-        self.filebackend.store_data(self.myhash, 'sample text')
-        self.assertEqual(self.filebackend.get_data(self.myhash), 'sample text')
 
-    def test_store_to_file_with_ttl(self):
-        self.filebackend.store_data(self.myhash, 'sample text', ttl=1)
-        self.assertEqual(self.filebackend.get_data(self.myhash), 'sample text')
-        time.sleep(2)
-        self.assertIsNone(self.filebackend.get_data(self.myhash, ttl=1))
+class FileBackendTests(MemBackendTests):
 
-    def test_store_to_file_with_key(self):
-        self.filebackend.store_data(self.myhash, 'sample text', key='empty')
-        self.assertEqual(self.filebackend.get_data(self.myhash, key='empty'), 'sample text')
+    def clear_storage(self):
+        import os 
+        try: 
+            os.remove('testfilecache.dat')
+        except (OSError, IOError):
+            pass
 
-    def test_store_to_file_with_key_noc(self):
-        self.filebackend.store_data(self.myhash, 'sample text', key='empty', noc=4)
-        self.assertEqual(self.filebackend.get_data(self.myhash, key='empty', noc=4), 'sample text')
-        for x in range(7):
-            self.filebackend.get_data(self.myhash, key='empty', noc=4)
-        self.assertIsNone(self.filebackend.get_data(self.myhash, key='empty', noc=4))
+    def setUp(self):
+        self.clear_storage()
+        self.backend = FileBackend('testfilecache.dat')
+        myhash = hashlib.md5('myhash').hexdigest()
+        myhash += hashlib.md5(myhash).hexdigest()
+        self.myhash = myhash
 
-    def test_store_to_file_with_key_ttl(self):
-        self.filebackend.store_data(self.myhash, 'sample text', key='empty', noc=0, ttl=1)
-        self.assertEqual(self.filebackend.get_data(self.myhash, key='empty', ttl=1), 'sample text')
-        time.sleep(2)
-        self.assertIsNone(self.filebackend.get_data(self.myhash, key='empty', ttl=1))
-
-    def test_valid_keys_file(self):
-        self.filebackend['wrong key'] = 'nothing'
-        self.assertEqual(set(self.filebackend.keys()), set(['wrong key']))
-        self.filebackend[self.myhash] = 'nothing'
-        self.assertEqual(self.filebackend.valid_keys, [self.myhash])
+    def tearDown(self):
+        self.clear_storage()
 
 
 @unittest.skipIf(not crypto, "Skipped: Pycrypto not installed.")

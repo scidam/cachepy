@@ -1,4 +1,3 @@
-
 import hashlib
 import warnings
 import datetime
@@ -23,8 +22,11 @@ except ImportError:
     import pickle
 
 
+__all__ = ('MemBackend', 'FileBackend', 'Cache', 'memcache', 'filecache')
+
+
 def _validate_key(key):
-    '''Returns validated key or None''' 
+    '''Returns validated key or None'''
 
     if not isinstance(key, basestring):
         return None
@@ -32,6 +34,7 @@ def _validate_key(key):
         return None
     else:
         return key
+
 
 def _load_safely_or_none(sdata):
     result = None
@@ -41,6 +44,7 @@ def _load_safely_or_none(sdata):
         warnings.warn("Could not load data.", RuntimeWarning)
     return result
 
+
 def _dump_safely_or_none(data):
     result = ''
     try:
@@ -48,6 +52,7 @@ def _dump_safely_or_none(data):
     except:
         warnings.warn("Data could be serialized.", RuntimeWarning)
     return result
+
 
 class BaseBackend(object):
 
@@ -77,7 +82,7 @@ class BaseBackend(object):
         else:
             result = _load_safely_or_none(sdata)
         return result
-    
+
     @property
     def valid_keys(self):
         '''Get valid keys'''
@@ -95,12 +100,13 @@ class BaseBackend(object):
         if isinstance(res, tuple):
             updated = (res[0], res[1], res[2], res[3]+1)
             self[hash] = self._tostring(updated[0], expired=updated[1], key=key, noc=updated[2], ncalls=updated[3])
-            if noc and res[3] > noc:
+            if noc and updated[3] >= noc:
                 res = None
                 del self[hash]
-            if ttl and datetime.datetime.now() > res[1]:
-                res = None
-                del self[hash]
+            if res is not None:
+                if ttl and datetime.datetime.now() > res[1]:
+                    res = None
+                    del self[hash]
         return res[0] if res else None
 
 
@@ -136,20 +142,6 @@ class FileBackend(shelve.Shelf, MemBackend):
         return result if self.has_key(hash) else None
 
 
-class Backend(object):
-    def __init__(self, backend=None):
-
-        if backend is None:
-            self.backend = MemBackend()
-
-        if isinstance(backend, basestring):
-            pass
-        elif isinstance(backend, dict):
-            pass
-        else:
-            pass
-
-
 class BaseCache(object):
     """Store and get function results to."""
 
@@ -168,7 +160,7 @@ class BaseCache(object):
             """Function wrapping the decorated function."""
             chash = self._hash(func, *args, **kwargs)
             result = self.backend.get_data(chash, key=self.key, ttl=self.ttl, noc=self.noc)
-            if result:
+            if result is not None:
                 return result
             else:
                 result =  func(*args, **kwargs)
@@ -193,8 +185,35 @@ class BaseCache(object):
         return chash.hexdigest()
 
 
+class Cache(BaseCache):
+    pass
 
 
+def create_filecache_safely(filename='cachepytemp.dat'):
+    import os 
+    overwrite = False
+
+    if not os.path.exists(filename):
+        overwrite = True
+    else:
+        try:
+            fileobject = shelve.open(filename)
+            if any([item for item in fileobject.keys() if hashlib.md5(item[:-32]).hexdigest() == item[-32:]]):
+                overwrite = True
+        except: # that could raise anydbm error, lets everything be handled by wildcard exception....(bad)
+            pass
+
+    if overwrite:
+        result = Cache(filename)
+    else:
+        warnings.warn("Could not create temporary cache. Using memory base cache instead.", RuntimeWarning)
+        result = Cache()
+
+    return result 
 
 
+# ----------------- Shortcuts  --------------------------
+memcache = Cache()
+filecache = create_filecache_safely()
 
+# -------------------------------------------------------
