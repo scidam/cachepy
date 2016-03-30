@@ -1,3 +1,39 @@
+'''
+Caching results of callables in Python.
+
+Features
+--------
+
+    * Storing cached data either on disk or in memory
+    * Setting up time-to-live and max number of querying for your cache
+    * Encryption of cached data with RSA algorithm
+
+Note
+----
+
+    Encryption functionality requires `pycrypto` package.
+
+Examples
+--------
+
+    from cachepy import *
+
+    mycache = Cache() # cache to memory without encryption
+
+    @mycache
+    my_heavy_function(x)
+        """Performs heavy computations"""
+        print('Hi, I am called...')
+        return x**2
+
+    my_heavy_function(x) 
+
+
+
+Author: Dmitry E. Kislov
+Email: kislov@easydan.com
+Date: 30 March 2016
+'''
 import hashlib
 import warnings
 import datetime
@@ -55,8 +91,42 @@ def _dump_safely_or_none(data):
 
 
 class BaseBackend(object):
+    '''
+    Abstract backend class.
+
+    Backends are used for storing cached data.
+
+    .. note:: 
+            - Backend is a dict-like object, that performs storing and 
+             retrieving data via backend['chash'] (e.g. `__getitem__, __setitem__`)
+            - It is assumed that AES enryption algorithm is used 
+              (`pycrypto` required to enable encryption functionality) 
+    '''
 
     def _tostring(self, data, key='', expired=None, noc=0, ncalls=0):
+        '''
+        Serialize (and encrypt if `key` is provided) data to string. 
+
+        Cache expiration date and the number of querying cache is stored in this string.
+
+        **Parameters**
+
+        :param data: any python serializable (by pickle) object
+        :param key: If provided and `pycrypto` is installed cached
+                    data will be encrypted
+                    (If `pycrypto` not installed this 
+                    parameter will be ignored).
+                    Default is empty string.
+        :param expired: data of cache expiration or None (default)
+        :param noc:  number of calls
+        :type key: str
+        :type expired: datetime,  None
+        :type noc: int 
+        :type ncalls: int
+        :returns: serialized data  
+        :rtype: str
+        '''
+
         _key = _validate_key(key)
         _tuple = (data, expired, noc, ncalls)
         if not crypto and _key:
@@ -70,6 +140,16 @@ class BaseBackend(object):
         return result
 
     def _fromstring(self, sdata, key=''):
+        '''
+        Deserialize (and decrypt if key is provided) cached data stored in the sdata (string).
+
+        :param sdata: a string
+        :param key: if provided (e.g. non-empty string), it
+                    will be used to decrypt `sdata` as a password
+        :type key: str, default is empty string
+        :returns: a python object
+        '''
+
         _key = _validate_key(key)
         if not isinstance(sdata, basestring):
             warnings.warn("Input data must be a string", RuntimeWarning)
@@ -85,45 +165,58 @@ class BaseBackend(object):
 
     @property
     def valid_keys(self):
-        '''Get valid keys'''
+        '''Returns list of valid keys or empty list
+        '''
         return [item for item in self.keys() if hashlib.md5(item[:-32]).hexdigest() == item[-32:]]
 
-    def store_data(self, hash, data, key, expired, noc, ncalls):
-        self[hash] = self._tostring(data, key=key, expired=expired, noc=noc, ncalls=ncalls)
+    def store_data(self, chash, data, key, expired, noc, ncalls):
+        self[chash] = self._tostring(data, key=key, expired=expired, noc=noc, ncalls=ncalls)
 
-    def get_data(self, hash, key='', ttl=0, noc=0):
+    def get_data(self, chash, key='', ttl=0, noc=0):
+        '''
+        Get data from cache. 
+
+        :param sdata: a string
+        :param key: if provided (e.g. non-empty string),
+                    will be used to decrypt sdata as a password 
+        :type key: str, default is empty string
+        :returns: a python object (representing sotred data)
+
+        '''
         res = None
         try: 
-            res = self._fromstring(self[hash], key=key)
+            res = self._fromstring(self[chash], key=key)
         except KeyError:
             pass
         if isinstance(res, tuple):
             updated = (res[0], res[1], res[2], res[3]+1)
-            self[hash] = self._tostring(updated[0], expired=updated[1], key=key, noc=updated[2], ncalls=updated[3])
+            self[chash] = self._tostring(updated[0], expired=updated[1], key=key, noc=updated[2], ncalls=updated[3])
             if noc and updated[3] >= noc:
                 res = None
-                del self[hash]
+                del self[chash]
             if res is not None:
                 if ttl and datetime.datetime.now() > res[1]:
                     res = None
-                    del self[hash]
+                    del self[chash]
         return res[0] if res else None
 
 
 class MemBackend(dict, BaseBackend):
+    '''Used to store cached data in memory'''
 
-    def store_data(self, hash, data, key='', ttl=0, noc=0, ncalls=0):
+    def store_data(self, chash, data, key='', ttl=0, noc=0, ncalls=0):
         if ttl:
             _expired = datetime.datetime.now() + datetime.timedelta(seconds=ttl)
         else: 
             _expired = datetime.datetime.now()
-        super(MemBackend, self).store_data(hash, data, key=key, expired=_expired, noc=noc, ncalls=ncalls)
+        super(MemBackend, self).store_data(chash, data, key=key, expired=_expired, noc=noc, ncalls=ncalls)
 
-    def get_data(self, hash, key='', ttl=0, noc=0):
-        return super(MemBackend, self).get_data(hash, key=key, ttl=ttl, noc=noc)
+    def get_data(self, chash, key='', ttl=0, noc=0):
+        return super(MemBackend, self).get_data(chash, key=key, ttl=ttl, noc=noc)
 
 
 class FileBackend(shelve.Shelf, MemBackend):
+    '''Used to save cached data to file'''
 
     def __init__(self, filename, flag='c', protocol=None, writeback=False):
         try:
@@ -132,14 +225,14 @@ class FileBackend(shelve.Shelf, MemBackend):
             import dbm as anydbm
         shelve.Shelf.__init__(self, anydbm.open(filename, flag), protocol, writeback)
 
-    def store_data(self, hash, data, key='', ttl=0, noc=0, ncalls=0):
-        super(FileBackend, self).store_data(hash, data, key=key, ttl=ttl, noc=noc, ncalls=ncalls)
+    def store_data(self, chash, data, key='', ttl=0, noc=0, ncalls=0):
+        super(FileBackend, self).store_data(chash, data, key=key, ttl=ttl, noc=noc, ncalls=ncalls)
         self.sync()
 
-    def get_data(self, hash, key='', ttl=0, noc=0):
-        result =  super(FileBackend, self).get_data(hash, key=key, ttl=ttl, noc=noc)
+    def get_data(self, chash, key='', ttl=0, noc=0):
+        result =  super(FileBackend, self).get_data(chash, key=key, ttl=ttl, noc=noc)
         self.sync()
-        return result if self.has_key(hash) else None
+        return result if self.has_key(chash) else None
 
 
 class BaseCache(object):
@@ -189,31 +282,16 @@ class Cache(BaseCache):
     pass
 
 
-def create_filecache_safely(filename='cachepytemp.dat'):
-    import os 
-    overwrite = False
-
-    if not os.path.exists(filename):
-        overwrite = True
-    else:
-        try:
-            fileobject = shelve.open(filename)
-            if any([item for item in fileobject.keys() if hashlib.md5(item[:-32]).hexdigest() == item[-32:]]):
-                overwrite = True
-        except: # that could raise anydbm error, lets everything be handled by wildcard exception....(bad)
-            pass
-
-    if overwrite:
-        result = Cache(filename)
-    else:
-        warnings.warn("Could not create temporary cache. Using memory base cache instead.", RuntimeWarning)
-        result = Cache()
-
-    return result 
-
-
 # ----------------- Shortcuts  --------------------------
 memcache = Cache()
-filecache = create_filecache_safely()
+memcache.__doc__='''
+Shortcut for `memcache = Cache()`. 
+
+Simple cache decorator without encryption, ttl etc.
+'''
 
 # -------------------------------------------------------
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
