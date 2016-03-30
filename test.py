@@ -3,7 +3,8 @@ import time
 import unittest
 import datetime
 
-from __init__ import *
+from .__init__ import *
+from .__init__  import _hash
 
 try:
     import cPickle as pickle
@@ -45,90 +46,91 @@ def function_returns_random_numpy(size):
 
 class BaseCacheHasherTests(unittest.TestCase):
 
+    def hasher(self, s):
+        ss = hashlib.sha256()
+        ww = hashlib.md5()
+        ss.update(s.encode('utf-8'))
+        ss = ss.hexdigest()
+        ww.update(ss.encode('utf-8'))
+        return ss + ww.hexdigest()
+
     def setUp(self):
         self.mycache = Cache(None)
         self.mycache_ttl = Cache(None, ttl=5)
         self.mycache_key = Cache(None, key='nothing')
         self.mycache_key_ttl = Cache(None, ttl=5, key='nothing')
-        self.hasher = hashlib.sha256()
 
     def test_func_hash_simple(self):
-        computed = self.mycache._hash(function_to_cache)
-        self.hasher.update('function_to_cache')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+        computed = _hash(function_to_cache,[], 0, '')
+        self.assertEqual(self.hasher('function_to_cache'), computed)
 
     def test_func_hash_simple_pars(self):
-        computed = self.mycache._hash(function_with_pars, 3)
-        self.hasher.update('function_with_pars3')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+        computed = _hash(function_with_pars, [3], 0, '')
+        self.assertEqual(self.hasher('function_with_pars3'), computed)
 
     def test_func_hash_simple_pars_kwargs(self):
-        computed = self.mycache._hash(function_with_kwargs, 3, default=7)
-        self.hasher.update('function_with_kwargs3default=7')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+        computed = _hash(function_with_kwargs, [3], 0, '', default=7)
+        self.assertEqual(self.hasher('function_with_kwargs3default=7'), computed)
 
     def test_func_hash_ttl(self):
-        computed = self.mycache_ttl._hash(function_to_cache)
-        self.hasher.update('function_to_cache5')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+        computed = _hash(function_to_cache,[], 5, '')
+        self.assertEqual(self.hasher('function_to_cache5'), computed)
 
     def test_func_hash_ttl_pars(self):
-        computed = self.mycache_ttl._hash(function_with_pars, 3)
-        self.hasher.update('function_with_pars35')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+        computed = _hash(function_with_pars, [3], 5, '')
+        self.assertEqual(self.hasher('function_with_pars35'), computed)
 
     def test_func_hash_ttl_pars_kwargs(self):
-        computed = self.mycache_ttl._hash(function_with_kwargs, 3, default=7)
-        self.hasher.update('function_with_kwargs3default=75')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+        computed = _hash(function_with_kwargs, [3], 5, '', default=7)
+        self.assertEqual(self.hasher('function_with_kwargs3default=75'), computed)
 
     def test_func_hash_with_key(self):
-        computed = self.mycache_key._hash(function_to_cache)
+        computed = _hash(function_to_cache, [], 0, 'nothing')
         if crypto:
-            self.hasher.update('function_to_cachenothing')
+            res = self.hasher('function_to_cachenothing')
         else:
-            self.hasher.update('function_to_cache')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+            res = self.hasher('function_to_cache')
+        self.assertEqual(res, computed)
 
     def test_func_hash_with_key_pars(self):
-        computed = self.mycache_key._hash(function_with_pars, 3)
+        computed = _hash(function_with_pars, [3], 0, 'nothing')
         if crypto:
-            self.hasher.update('function_with_pars3nothing')
+            res = self.hasher('function_with_pars3nothing')
         else:
-            self.hasher.update('function_with_pars3')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+            res = self.hasher('function_with_pars3')
+        self.assertEqual(res, computed)
 
     def test_func_hash_with_key_pars_kwargs(self):
-        computed = self.mycache_key._hash(function_with_kwargs, 3, default=7)
+        computed = _hash(function_with_kwargs, [3], 0, 'nothing', default=7)
         if crypto:
-            self.hasher.update('function_with_kwargs3default=7nothing')
+            res = self.hasher('function_with_kwargs3default=7nothing')
         else:
-            self.hasher.update('function_with_kwargs3default=7')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+            res = self.hasher('function_with_kwargs3default=7')
+        self.assertEqual(res, computed)
 
     def test_func_hash_with_ttl_key(self):
-        computed = self.mycache_key_ttl._hash(function_to_cache)
+        computed = _hash(function_to_cache, [], 5, 'nothing')
         if crypto:
-            self.hasher.update('function_to_cache5nothing')
+            res = self.hasher('function_to_cache5nothing')
         else:
-            self.hasher.update('function_to_cache5')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+            res = self.hasher('function_to_cache5')
+        self.assertEqual(res, computed)
 
     def test_func_hash_with_ttl_key_pars(self):
-        computed = self.mycache_key_ttl._hash(function_with_pars, 3)
+        computed = _hash(function_with_pars, [3], 5, 'nothing')
         if crypto:
-            self.hasher.update('function_with_pars35nothing')
+            res = self.hasher('function_with_pars35nothing')
         else:
-            self.hasher.update('function_with_pars35')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+            res = self.hasher('function_with_pars35')
+        self.assertEqual(res, computed)
 
     def test_func_hash_with_ttl_key_pars_kwargs(self):
-        computed = self.mycache_key_ttl._hash(function_with_kwargs, 3, default=7)
+        computed = _hash(function_with_kwargs, [3], 5, 'nothing', default=7)
         if crypto:
-            self.hasher.update('function_with_kwargs3default=75nothing')
+            res = self.hasher('function_with_kwargs3default=75nothing')
         else:
-            self.hasher.update('function_with_kwargs3default=75')
-        self.assertEqual(self.hasher.hexdigest(), computed)
+            res = self.hasher('function_with_kwargs3default=75')
+        self.assertEqual(res, computed)
 
 
 class BaseCacheToMemTests(unittest.TestCase):
@@ -154,13 +156,13 @@ class BaseCacheToMemTests(unittest.TestCase):
         dictfun = self.decorator(function_returns_dict)
         self.assertEqual(dictfun(2), {'output': 2})
 
-    @unittest.skipIf(not np, "Skipped: Numpy not installed.")
+    @unittest.skipIf(not np, "Skipped: Numpy is not installed.")
     def test_function_returns_np(self):
          npfun = self.decorator(function_returns_random_numpy)
          self.assertEqual(np.shape(npfun(3)), (3,3))
          np.testing.assert_array_equal(npfun(3), npfun(3))
 
-    @unittest.skipIf(not np, "Skipped: Numpy not installed.")    
+    @unittest.skipIf(not np, "Skipped: Numpy is not installed.")    
     def test_function_returns_np_noc(self):
          npfun = self.decorator_key_ttl_noc(function_returns_random_numpy)
          res = npfun(2)
@@ -169,7 +171,7 @@ class BaseCacheToMemTests(unittest.TestCase):
          np.testing.assert_array_equal(res, res1)
          self.assertFalse((res==res2).all())
     
-    @unittest.skipIf(not np, "Skipped: Numpy not installed.")    
+    @unittest.skipIf(not np, "Skipped: Numpy is not installed.")    
     def test_function_returns_np_ttl(self):
          npfun = self.decorator_key_ttl_noc(function_returns_random_numpy)
          res = npfun(2)
@@ -202,8 +204,8 @@ class MemBackendTests(unittest.TestCase):
 
     def setUp(self):
         self.backend = MemBackend()
-        myhash = hashlib.md5('myhash').hexdigest()
-        myhash += hashlib.md5(myhash).hexdigest()
+        myhash = hashlib.md5('myhash'.encode('utf-8')).hexdigest()
+        myhash += hashlib.md5(myhash.encode('utf-8')).hexdigest()
         self.myhash = myhash
 
     def test_store_to_mem(self):
@@ -252,15 +254,15 @@ class FileBackendTests(MemBackendTests):
     def setUp(self):
         self.clear_storage()
         self.backend = FileBackend('testfilecache.dat')
-        myhash = hashlib.md5('myhash').hexdigest()
-        myhash += hashlib.md5(myhash).hexdigest()
+        myhash = hashlib.md5('myhash'.encode('utf-8')).hexdigest()
+        myhash += hashlib.md5(myhash.encode('utf-8')).hexdigest()
         self.myhash = myhash
 
     def tearDown(self):
         self.clear_storage()
 
 
-@unittest.skipIf(not crypto, "Skipped: Pycrypto not installed.")
+@unittest.skipIf(not crypto, "Skipped: Pycrypto is not installed.")
 class CrypterTests(unittest.TestCase):
     def setUp(self):
         self.cipher = AESCipher('scidam')

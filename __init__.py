@@ -6,7 +6,7 @@ Features
 
     * Storing cached data either on disk or in memory
     * Setting up time-to-live and max number of querying for your cache
-    * Encryption of cached data with RSA algorithm
+    * Encryption of cached data with symmetric encryption (RSA) algorithm
 
 Note
 ----
@@ -15,6 +15,8 @@ Note
 
 Examples
 --------
+
+.. code-block:: python
 
     from cachepy import *
 
@@ -30,6 +32,18 @@ Examples
 
 
 
+Tests
+-----
+     
+
+TODO
+----
+
+    * Writting redis backend
+
+
+
+
 Author: Dmitry E. Kislov
 Email: kislov@easydan.com
 Date: 30 March 2016
@@ -39,6 +53,7 @@ import warnings
 import datetime
 import base64
 import shelve
+import sys
 
 try:
     basestring = basestring
@@ -58,7 +73,7 @@ except ImportError:
     import pickle
 
 
-__all__ = ('MemBackend', 'FileBackend', 'Cache', 'memcache', 'filecache')
+__all__ = ('MemBackend', 'FileBackend', 'Cache', 'memcache')
 
 
 def _validate_key(key):
@@ -88,6 +103,26 @@ def _dump_safely_or_none(data):
     except:
         warnings.warn("Data could be serialized.", RuntimeWarning)
     return result
+
+
+def _hash(func, args, ttl, key, **kwargs):
+    '''Compute hash of the function to be evaluated'''
+
+    chash = hashlib.sha256()
+    complhash = hashlib.md5()
+    chash.update(func.__name__.encode('utf-8'))
+    if args: 
+        for a in args:
+            chash.update(repr(a).encode('utf-8'))
+    for k in sorted(kwargs):
+        chash.update(("%s=%s" % (k, repr(kwargs[k]))).encode('utf-8'))
+    if ttl:
+        chash.update(str(ttl).encode('utf-8'))
+    if key and crypto:
+        chash.update(str(key).encode('utf-8'))
+    chash = chash.hexdigest() 
+    complhash.update(chash.encode('utf-8'))
+    return  chash + complhash.hexdigest() 
 
 
 class BaseBackend(object):
@@ -150,6 +185,8 @@ class BaseBackend(object):
         :returns: a python object
         '''
 
+        if sys.version_info >= (3, 0):
+            sdata = sdata.decode('utf-8')
         _key = _validate_key(key)
         if not isinstance(sdata, basestring):
             warnings.warn("Input data must be a string", RuntimeWarning)
@@ -167,7 +204,7 @@ class BaseBackend(object):
     def valid_keys(self):
         '''Returns list of valid keys or empty list
         '''
-        return [item for item in self.keys() if hashlib.md5(item[:-32]).hexdigest() == item[-32:]]
+        return [item for item in self.keys() if hashlib.md5(item[:-32].encode('utf-8')).hexdigest() == item[-32:]]
 
     def store_data(self, chash, data, key, expired, noc, ncalls):
         self[chash] = self._tostring(data, key=key, expired=expired, noc=noc, ncalls=ncalls)
@@ -184,10 +221,8 @@ class BaseBackend(object):
 
         '''
         res = None
-        try: 
+        if chash in self: 
             res = self._fromstring(self[chash], key=key)
-        except KeyError:
-            pass
         if isinstance(res, tuple):
             updated = (res[0], res[1], res[2], res[3]+1)
             self[chash] = self._tostring(updated[0], expired=updated[1], key=key, noc=updated[2], ncalls=updated[3])
@@ -232,7 +267,7 @@ class FileBackend(shelve.Shelf, MemBackend):
     def get_data(self, chash, key='', ttl=0, noc=0):
         result =  super(FileBackend, self).get_data(chash, key=key, ttl=ttl, noc=noc)
         self.sync()
-        return result if self.has_key(chash) else None
+        return result if chash in self else None
 
 
 class BaseCache(object):
@@ -251,31 +286,15 @@ class BaseCache(object):
         """Decorator function for caching results of a callable."""
         def wrapper(*args, **kwargs):
             """Function wrapping the decorated function."""
-            chash = self._hash(func, *args, **kwargs)
+            chash = _hash(func, list(args), self.ttl, self.key, **kwargs)
             result = self.backend.get_data(chash, key=self.key, ttl=self.ttl, noc=self.noc)
             if result is not None:
                 return result
             else:
-                result =  func(*args, **kwargs)
+                result = func(*args, **kwargs)
                 self.backend.store_data(chash, result, key=self.key, ttl=self.ttl, noc=self.noc, ncalls=0)
             return result
         return wrapper
-
-
-    def _hash(self, func, *args, **kwargs):
-        '''Compute hash of the function to be evaluated'''
-
-        chash = hashlib.sha256()
-        chash.update(func.__name__)
-        for a in args:
-            chash.update(repr(a))
-        for k in sorted(kwargs):
-            chash.update("%s=%s" % (k, repr(kwargs[k])))
-        if self.ttl:
-            chash.update(str(self.ttl))
-        if self.key:
-            chash.update(str(self.key))
-        return chash.hexdigest()
 
 
 class Cache(BaseCache):
@@ -291,7 +310,7 @@ Simple cache decorator without encryption, ttl etc.
 '''
 
 # -------------------------------------------------------
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+# 
+# if __name__ == "__main__":
+#     import doctest
+#     doctest.testmod()
