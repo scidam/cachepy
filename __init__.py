@@ -1,5 +1,5 @@
 '''
-Caching results of callables in Python.
+Caching results of functions in Python.
 
 Features
 --------
