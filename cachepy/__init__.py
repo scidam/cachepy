@@ -139,7 +139,7 @@ The code tested (and works as expected) in **Python > 2.7.x** and **Python > 3.4
 
 .. code-block:: bash
 
-         python -m  cachepy.test
+         python -m  cachepy.tests
 
 
 TODO
