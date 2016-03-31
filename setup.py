@@ -1,8 +1,4 @@
-import os
 from setuptools import setup
-
-
-
 
 
 README_FILE = 'README.rst'
@@ -12,11 +8,11 @@ setup(name='cachepy',
       version='0.1',
       description='Caching results of callables in Python',
       keywords='cache, python, cache to file, caching callables, caching',
-      long_description=open(README_FILE).read(),
+      long_description=open(README_FILE, 'r').read(),
       include_package_data=True,
       author='Dmitry E. Kislov',
       author_email='kislov@easydan.com',
-      url='https://github.com/scidam/cmsplugin-nvd3',
+      url='https://github.com/scidam/cachepy',
       classifiers=[
           'Development Status :: 4 - Beta',
           'Environment :: Web Environment',
