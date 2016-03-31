@@ -148,6 +148,12 @@ TODO
     * Writing backend for redis server
     * Testing in Python 3.x causes Error 11?!
 
+Log list
+--------
+
+    * Version 0.1
+        - initial release
+
 
 .. codeauthor:: Dmitry Kislov <kislov@easydan.com>
 
