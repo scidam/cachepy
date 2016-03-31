@@ -149,8 +149,8 @@ Log list
 ========
 
 	* Version 0.1
-	  -----------
-	  	- initial release
+		
+		- initial release
 
 
 *Code author: Dmitry Kislov <kislov@easydan.com>*
