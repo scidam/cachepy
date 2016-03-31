@@ -37,7 +37,6 @@ Examples
    @mycache
    def my_heavy_function(x):
        """Performs heavy computations"""
-
        print('Hi, I am called...')
        return x**2
 
@@ -67,7 +66,6 @@ data on a decorator creation: ::
    @cache_with_ttl
    def my_heavy_function(x):
        """Performs heavy computations"""
-
        print('Hi, I am called...')
        return x**2
 
@@ -81,7 +79,6 @@ data on a decorator creation: ::
    @cache_with_noc
    def my_heavy_function(x):
        """Performs heavy computations"""
-
        print('Hi, I am called...')
        return x**2
 
@@ -96,7 +93,6 @@ One can set up both *noc* and *ttl* arguments on a cache decorator: ::
    @cache_with_noc_ttl
    def my_heavy_function(x):
        """Performs heavy computations"""
-
        print('Hi, I am called...')
        return x**2
 
@@ -115,7 +111,6 @@ password (RSA algo is used): ::
    @cache_to_file_ttl_noc
    def my_heavy_function(x):
        """Performs heavy computations"""
-
        print('Hi, I am called...')
        return x**2
 

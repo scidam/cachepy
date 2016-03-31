@@ -6,12 +6,12 @@ Features
 
     * Storing cached data either on disk or in memory
     * Setting up time-to-live and the number of function calls for your cache
-    * Encryption of cached data with symmetric encryption (RSA) algo
+    * Encryption of cached data (symmetric encryption (RSA) algorithm used)
 
 Note
 ----
 
-    - Encryption functionality requires `pycrypto` package.
+    - Encryption functionality (requires `pycrypto` package)
     - When using cache-to-file functionality you have to
       to clean up (if needed) created file(s) manually
 
@@ -34,9 +34,6 @@ Examples
     my_heavy_function(2)
     # "Hi, I am called..." will be printed to stdout only once
     my_heavy_function(2)
-
-`memcache` -- is decorator obtained via wildcard importing from cachepy. It
-is fully equivalent to `mycache` in the example above.
 
 
 To store data to file, you need to create decorator as follows:
