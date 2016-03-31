@@ -41,4 +41,3 @@ class AESCipher:
         iv = enc[:AES.block_size]
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
         return unpadding(cipher.decrypt(enc[AES.block_size:]))
-    

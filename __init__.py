@@ -135,9 +135,8 @@ a warning will occurred ("Pycrypto not installed. Data isn't encrypted");
 In this case, cache will work without encryption functionality.
 
 
-Tests
------
-    To run tests call:
+Testing
+-------
 
     .. code-block:: bash
 
@@ -179,13 +178,11 @@ except ImportError:
     import pickle
 
 # -------------------- Module meta info --------------------
-# __author__ = "Dmitry E. Kislov"
-# __copyright__ = "Copyright 2016"
-# __license__ = "MIT"
-# __version__ = "0.1"
-# __maintainer__ = "Dmitry E. Kislov"
-# __email__ = "kislov@easydan.com"
-# __status__ = "Production"
+__author__ = "Dmitry E. Kislov"
+__license__ = "MIT"
+__version__ = "0.1"
+__maintainer__ = "Dmitry E. Kislov"
+__email__ = "kislov@easydan.com"
 # ----------------------------------------------------------
 
 __all__ = ('Cache', 'memcache')
