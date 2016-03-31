@@ -52,7 +52,7 @@ To store data to file, you need to create decorator as follows: ::
 
 Its behaviour is the same as a memory-based one.
 
-One can set up time-to-live and/or maximum number of retrievings for cached
+One can set up time-to-live and/or maximum number of retrievals for cached
 data when a decorator is created: ::
 
    import time
