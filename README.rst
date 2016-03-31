@@ -28,6 +28,7 @@ Note
 Examples
 ========
 
+::
 
    from cachepy import *
 
