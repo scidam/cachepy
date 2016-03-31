@@ -6,12 +6,12 @@ Features
 
     * Storing cached data either on disk or in memory
     * Setting up time-to-live and the number of function calls for your cache
-    * Encryption of cached data (symmetric encryption (RSA) algorithm used)
+    * Encryption of cached data (symmetric encryption (RSA) algorithm is used)
 
 Note
 ----
 
-    - Encryption functionality (requires `pycrypto` package)
+    - Encryption functionality requires `pycrypto` package to be installed
     - When using cache-to-file functionality you have to
       to clean up (if needed) created file(s) manually
 
@@ -45,8 +45,8 @@ To store data to file, you need to create decorator as follows:
 
 Its behaviour is the same as a memory-based one.
 
-One can set up time-to-live and/or maximum number of getting cached data
-on a decorator creation:
+One can set up time-to-live and/or maximum number of retrievings for cached data
+when a decorator is created:
 
 .. code-block:: python
 
@@ -83,7 +83,7 @@ on a decorator creation:
     my_heavy_function(3) # 'Hi, I am called ...' will be printed again
 
 
-One can set up both `noc` and `ttl` arguments on a cache decorator:
+It is easy to use both `noc` and `ttl` arguments on a cache decorator:
 
 .. code-block:: python
 
@@ -118,17 +118,17 @@ a password (RSA algo is used):
     my_heavy_function(2) # Will print 'Hi, I am called...'
     my_heavy_function(2) # Will not print 'Hi, I am called...'
 
-Calling `my_heavy_function` decorated by `cache_to_file_ttl_noc`
+Calling `my_heavy_function` function being decorated by `cache_to_file_ttl_noc`
 will store `4` (result of computations)
 in the file `mycache.dat`;
 along with the result of computations,
-additional info will be stored (and encrypted by the RSA algo
+additional info will be stored (these all will be encrypted by the RSA algo
 with the password `mypassword`):
 result expiration  time (computed from ttl), noc and the number
 of performed calls of the decorated function (`my_heavy_function`).
 Data will not be encrypted, if `pycrypto` package isn't installed.
-If you pass non-empty `key` parameter to the  `Cache` constructor,
-a warning will occurred ("Pycrypto not installed. Data isn't encrypted");
+If you pass non-empty `key` parameter to the  `Cache` constructor, the
+warning will occurred ("Pycrypto not installed. Data isn't encrypted");
 In this case, cache will work without encryption functionality.
 
 
