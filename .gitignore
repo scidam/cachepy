@@ -60,6 +60,5 @@ target/
 
 project.db
 
-env
-env3
-new
+.project
+.pydevproject

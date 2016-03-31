@@ -6,8 +6,8 @@ with open(README_FILE, 'r') as d:
 
 
 setup(name='cachepy',
-      packages=['.'],
-      version='0.1',
+      packages=['cachepy'],
+      version='0.5',
       description='Caching results of functions in Python',
       keywords='caching, python, cache to file, caching callables',
       long_description=desc,
