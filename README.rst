@@ -28,6 +28,7 @@ Note
 Examples
 ========
 
+
    from cachepy import *
 
    mycache = Cache() # cache to memory without encryption
@@ -35,6 +36,7 @@ Examples
    @mycache
    def my_heavy_function(x):
        """Performs heavy computations"""
+
        print('Hi, I am called...')
        return x**2
 
@@ -45,7 +47,7 @@ Examples
 *memcache* -- is decorator obtained via wildcard importing from
 cachepy. It is fully equivalent to *mycache* in the example above.
 
-To store data to file, you need to create decorator as follows:
+To store data to file, you need to create decorator as follows: ::
 
    # create cache-to-file decorator
    filecache = Cache('mycache.dat')
@@ -53,7 +55,7 @@ To store data to file, you need to create decorator as follows:
 Its behaviour is the same as a memory-based one.
 
 One can set up time-to-live and/or maximum number of getting cached
-data on a decorator creation:
+data on a decorator creation: ::
 
    import time
    from cachepy import *
@@ -64,6 +66,7 @@ data on a decorator creation:
    @cache_with_ttl
    def my_heavy_function(x):
        """Performs heavy computations"""
+
        print('Hi, I am called...')
        return x**2
 
@@ -77,6 +80,7 @@ data on a decorator creation:
    @cache_with_noc
    def my_heavy_function(x):
        """Performs heavy computations"""
+
        print('Hi, I am called...')
        return x**2
 
@@ -84,13 +88,14 @@ data on a decorator creation:
    my_heavy_function(3) # This will not print 'Hi, I am called ...'
    my_heavy_function(3) # 'Hi, I am called ...' will be printed again
 
-One can set up both *noc* and *ttl* arguments on a cache decorator:
+One can set up both *noc* and *ttl* arguments on a cache decorator: ::
 
    cache_with_noc_ttl = Cache(noc=2, ttl=1)
 
    @cache_with_noc_ttl
    def my_heavy_function(x):
        """Performs heavy computations"""
+
        print('Hi, I am called...')
        return x**2
 
@@ -101,7 +106,7 @@ One can set up both *noc* and *ttl* arguments on a cache decorator:
    my_heavy_function(3) # This will print 'Hi, I am called ...'
 
 One can encrypt cached data by providing non-empty *key* argument as a
-password (RSA algo is used):
+password (RSA algo is used): ::
 
    cache_to_file_ttl_noc = Cache('mycache.dat',
                                   noc=2, ttl = 2, key='mypassword')
@@ -109,6 +114,7 @@ password (RSA algo is used):
    @cache_to_file_ttl_noc
    def my_heavy_function(x):
        """Performs heavy computations"""
+
        print('Hi, I am called...')
        return x**2
 
