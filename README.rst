@@ -13,7 +13,7 @@ Features
    * Setting up time-to-live and the number of function calls for
      your cache
 
-   * Encryption of cached data with symmetric encryption (RSA) algo
+   * Encryption of cached data (symmetric encryption (RSA) algorithm used)
 
 
 Note
@@ -131,6 +131,8 @@ case, cache will work without encryption functionality.
 
 Testing
 =======
+
+The code tested (and works as expected) in **Python > 2.7.x** and **Python > 3.4.x**.
 
       python -m  cachepy.test
 
