@@ -129,7 +129,7 @@ of performed calls of the decorated function (`my_heavy_function`).
 Data will not be encrypted, if `pycrypto` package isn't installed.
 If you pass non-empty `key` parameter to the  `Cache` constructor, the
 warning will occurred ("Pycrypto not installed. Data isn't encrypted");
-In this case, cache will work without encryption functionality.
+In this case, the cache will work without encryption functionality.
 
 
 Testing
