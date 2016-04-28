@@ -142,6 +142,8 @@ TODO
 
    * Testing in Python 3.x causes Error 11?!
    
+   * Issue with a function default values and caching to a file needs to be investigated closely
+   
 
 Log list
 ========
