@@ -243,12 +243,6 @@ class MemBackendTests(unittest.TestCase):
         self.assertIsNone(self.backend.get_data(self.myhash,
                                                 key='empty', ttl=1))
 
-    def test_valid_keys_mem(self):
-        self.backend['wrong key'] = 'nothing'
-        self.assertEqual(set(self.backend.keys()), set(['wrong key']))
-        self.backend[self.myhash] = 'nothing'
-        self.assertEqual(self.backend.valid_keys, [self.myhash])
-
 
 class FileBackendTests(MemBackendTests):
 

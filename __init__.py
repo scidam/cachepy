@@ -321,14 +321,6 @@ class BaseBackend(object):
             result = _load_safely_or_none(sdata)
         return result
 
-    @property
-    def valid_keys(self):
-        '''Returns list of valid keys or empty list
-        '''
-        return [item for item in self.keys() if
-                hashlib.md5(item[:-32].encode('utf-8')
-                            ).hexdigest() == item[-32:]]
-
     def store_data(self, chash, data, key, expired, noc, ncalls):
         self[chash] = self._tostring(data, key=key, expired=expired,
                                      noc=noc, ncalls=ncalls)
