@@ -396,7 +396,7 @@ class FileBackend(shelve.Shelf, MemBackend):
 
 
 class BaseCache(object):
-    """Abstract class for cache decorators"""
+    """Abstract class for caching decorator"""
 
     def __init__(self, backend=None, key='', ttl=0, noc=0):
         if isinstance(backend, basestring):
@@ -427,8 +427,7 @@ class BaseCache(object):
 
 
 class Cache(BaseCache):
-    ''' '''
-    pass
+    '''Caching decorator constructor'''
 
 
 # ----------------- Shortcuts  --------------------------
