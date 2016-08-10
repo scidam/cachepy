@@ -25,6 +25,16 @@ Note
      (if needed) created file(s) manually
 
 
+Installation
+====
+
+cachepy is available on PyPi.
+
+::
+
+    pip install cachepy
+
+
 Examples
 ========
 
