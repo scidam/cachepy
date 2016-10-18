@@ -8,6 +8,8 @@ from Crypto.Cipher import AES
 
 
 def padding(s, bs=AES.block_size):
+    '''Fills a string with arbitrary symbols to make its length divisible by `bs`.
+    '''
     if len(s) % bs == 0:
        return s + ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(bs - 1)) + chr(96 - bs)
     if len(s) % bs > 0 and len(s) > bs:
@@ -18,6 +20,8 @@ def padding(s, bs=AES.block_size):
 
 
 def unpadding(s, bs=AES.block_size):
+    '''Reverse operation to padding (see above)
+    '''
     return s[:ord(s[-1])-96] if len(s) % bs == 0 else ''
 
 
