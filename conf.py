@@ -1,0 +1,11 @@
+
+# Allowed key length
+MAX_KEY_LENGTH = 1000
+MIN_KEY_LENGTH = 3
+
+#ENCODER
+BASE_ENCODER = 'base64'
+BASE_DECODER = 'base64'
+
+
+DEFAULT_ENCODING = 'utf-8'
