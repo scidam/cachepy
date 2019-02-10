@@ -65,3 +65,4 @@ env3
 new
 .project
 .pydevproject
+.pytest_cache
