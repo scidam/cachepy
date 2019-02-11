@@ -1,8 +1,9 @@
 import datetime
 from .base import BaseBackend
+from collections import UserDict
 
 
-class MemBackend(dict, BaseBackend):
+class MemBackend(UserDict, BaseBackend):
     """Used to store the cached data in memory.
     """
 

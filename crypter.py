@@ -31,8 +31,8 @@ def unpadding(s, bs=AES.block_size):
     """Reverse operation to padding (see above)
     """
 
-    if PY3:
-        s = s.decode(DEFAULT_ENCODING)
+    # if PY3:
+    #     s = s.decode(DEFAULT_ENCODING)
     return s[:ord(s[-1])-96] if len(s) % bs == 0 else ''
 
 

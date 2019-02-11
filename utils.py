@@ -67,7 +67,7 @@ def decode_safely(encoded_data, decoder=base_decoder):
 
     result = None
     try:
-        result = pickle.loads(decoder(sdata))
+        result = pickle.loads(decoder(encoded_data))
     except:
         # TODO: COuld not decode the data, something was wrong with the data; anything can happen here!!!
         # So, we need to use wildcard exception here

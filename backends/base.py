@@ -101,10 +101,10 @@ class BaseBackend(object):
             raise NotImplementedError
 
     def remove(self, name):
+        if not hasattr(self, '__contains__'):
+            raise NotImplementedError
         if name in self:
             del self[name]
-        else:
-            raise NotImplementedError
 
     def get_data(self, data_key, key=''):
         """Get the data from the cache.

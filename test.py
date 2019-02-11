@@ -2,19 +2,14 @@ import hashlib
 import time
 import unittest
 
-from .utils import get_function_hash
+from .utils import get_function_hash, PY3, can_encrypt, AESCipher
 from . import FileBackend, MemBackend, Cache
+from .conf import DEFAULT_ENCODING
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
-
-try:
-    from crypter import AESCipher
-    crypto = True
-except ImportError:
-    crypto = False
 
 try:
     import numpy as np
@@ -43,15 +38,21 @@ def function_returns_random_numpy(size):
     return np.random.rand(size, size)
 # ----------------------------------------------------------------
 
+    
 
 class BaseCacheHasherTests(unittest.TestCase):
 
     def hasher(self, s):
         ss = hashlib.sha256()
         ww = hashlib.md5()
-        ss.update(s.encode('utf-8'))
-        ss = ss.hexdigest()
-        ww.update(ss.encode('utf-8'))
+        if PY3:
+            ss.update(s.encode(DEFAULT_ENCODING))
+            ss = ss.hexdigest()
+            ww.update(ss.encode(DEFAULT_ENCODING))
+        else:
+            ss.update(s)
+            ss = ss.hexdigest()
+            ww.update(ss)
         return ss + ww.hexdigest()
 
     def setUp(self):
@@ -62,73 +63,75 @@ class BaseCacheHasherTests(unittest.TestCase):
 
     def test_get_function_hash_simple(self):
         computed = get_function_hash(function_to_cache, args=([], 0, ''))
-        self.assertEqual(self.hasher('function_to_cache'), computed)
+        self.assertEqual(self.hasher("function_to_cache[]0''"), computed)
 
     def test_get_function_hash_simple_pars(self):
         computed = get_function_hash(function_with_pars, args=([3], 0, ''))
-        self.assertEqual(self.hasher('function_with_pars3'), computed)
+        self.assertEqual(self.hasher("function_with_pars[3]0''"), computed)
 
     def test_get_function_hash_simple_pars_kwargs(self):
         computed = get_function_hash(function_with_kwargs, args=([3], 0, ''), kwargs={'default': 7})
-        self.assertEqual(self.hasher('function_with_kwargs3default=7'),
+        self.assertEqual(self.hasher("function_with_kwargs[3]0''default=7"),
                          computed)
 
     def test_get_function_hash_ttl(self):
         computed = get_function_hash(function_to_cache, args=([], 5, ''))
-        self.assertEqual(self.hasher('function_to_cache5'), computed)
+        self.assertEqual(self.hasher("function_to_cache[]5''"), computed)
 
     def test_get_function_hash_ttl_pars(self):
         computed = get_function_hash(function_with_pars, args=([3], 5, ''))
-        self.assertEqual(self.hasher('function_with_pars35'), computed)
+        self.assertEqual(self.hasher("function_with_pars[3]5''"), computed)
 
     def test_get_function_hash_ttl_pars_kwargs(self):
-        computed = get_function_hash(function_with_kwargs, args=([3], 5, ''), kwargs={'default': 7})
-        self.assertEqual(self.hasher('function_with_kwargs3default=75'),
+        computed = get_function_hash(function_with_kwargs, args=([3], ''), 
+                                     ttl=5, kwargs={'default': 7})
+        self.assertEqual(self.hasher("function_with_kwargs[3]''default=75"),
                          computed)
 
     def test_get_function_hash_with_key(self):
-        computed = get_function_hash(function_to_cache, args=([], 0, 'nothing'))
-        if crypto:
-            res = self.hasher('function_to_cachenothing')
+        computed = get_function_hash(function_to_cache, args=([], 0), key='nothing')
+        if can_encrypt:
+            res = self.hasher('function_to_cache[]0nothing')
         else:
             res = self.hasher('function_to_cache')
         self.assertEqual(res, computed)
 
     def test_get_function_hash_with_key_pars(self):
-        computed = get_function_hash(function_with_pars, args=([3], 0, 'nothing'))
-        if crypto:
-            res = self.hasher('function_with_pars3nothing')
+        computed = get_function_hash(function_with_pars, args=([3], 0), key='nothing')
+        if can_encrypt:
+            res = self.hasher('function_with_pars[3]0nothing')
         else:
-            res = self.hasher('function_with_pars3')
+            res = self.hasher('function_with_pars[3]0')
         self.assertEqual(res, computed)
 
     def test_get_function_hash_with_key_pars_kwargs(self):
-        computed = get_function_hash(function_with_kwargs, args=([3], 0, 'nothing'), kwargs={'default': 7})
-        if crypto:
-            res = self.hasher('function_with_kwargs3default=7nothing')
+        computed = get_function_hash(function_with_kwargs, args=([3], 0),
+                                     key='nothing', kwargs={'default': 7})
+        if can_encrypt:
+            res = self.hasher('function_with_kwargs[3]0default=7nothing')
         else:
-            res = self.hasher('function_with_kwargs3default=7')
+            res = self.hasher('function_with_kwargs[3]0default=7')
         self.assertEqual(res, computed)
 
     def test_get_function_hash_with_ttl_key(self):
-        computed = get_function_hash(function_to_cache, args=([], 5, 'nothing'))
-        if crypto:
-            res = self.hasher('function_to_cache5nothing')
+        computed = get_function_hash(function_to_cache, args=([],), ttl=5, key='nothing')
+        if can_encrypt:
+            res = self.hasher('function_to_cache[]5nothing')
         else:
-            res = self.hasher('function_to_cache5')
+            res = self.hasher('function_to_cache[]5')
         self.assertEqual(res, computed)
 
     def test_get_function_hash_with_ttl_key_pars(self):
-        computed = get_function_hash(function_with_pars, args=([3], 5, 'nothing'))
-        if crypto:
+        computed = get_function_hash(function_with_pars, args=(3,), ttl=5, key='nothing')
+        if can_encrypt:
             res = self.hasher('function_with_pars35nothing')
         else:
             res = self.hasher('function_with_pars35')
         self.assertEqual(res, computed)
 
     def test_get_function_hash_with_ttl_key_pars_kwargs(self):
-        computed = get_function_hash(function_with_kwargs, args=([3], 5, 'nothing'), kwargs={'default':7})
-        if crypto:
+        computed = get_function_hash(function_with_kwargs, args=(3,), ttl=5, key='nothing', kwargs={'default':7})
+        if can_encrypt:
             res = self.hasher('function_with_kwargs3default=75nothing')
         else:
             res = self.hasher('function_with_kwargs3default=75')
@@ -207,8 +210,8 @@ class MemBackendTests(unittest.TestCase):
 
     def setUp(self):
         self.backend = MemBackend()
-        myhash = hashlib.md5('myhash'.encode('utf-8')).hexdigest()
-        myhash += hashlib.md5(myhash.encode('utf-8')).hexdigest()
+        myhash = hashlib.md5('myhash'.encode(DEFAULT_ENCODING)).hexdigest()
+        myhash += hashlib.md5(myhash.encode(DEFAULT_ENCODING)).hexdigest()
         self.myhash = myhash
 
     def test_store_to_mem(self):
@@ -219,7 +222,7 @@ class MemBackendTests(unittest.TestCase):
         self.backend.store_data(self.myhash, 'sample text', ttl=1)
         self.assertEqual(self.backend.get_data(self.myhash), 'sample text')
         time.sleep(2)
-        self.assertIsNone(self.backend.get_data(self.myhash, ttl=1))
+        self.assertIsNone(self.backend.get_data(self.myhash))
 
     def test_store_to_mem_with_key(self):
         self.backend.store_data(self.myhash, 'sample text', key='empty')
@@ -231,18 +234,16 @@ class MemBackendTests(unittest.TestCase):
         self.assertEqual(self.backend.get_data(self.myhash, key='empty'),
                          'sample text')
         for x in range(7):
-            self.backend.get_data(self.myhash, key='empty', noc=4)
+            self.backend.get_data(self.myhash, key='empty')
         self.assertIsNone(self.backend.get_data(self.myhash, key='empty'))
 
     def test_store_to_mem_with_key_ttl(self):
         self.backend.store_data(self.myhash, 'sample text', key='empty',
                                 noc=0, ttl=1)
-        self.assertEqual(self.backend.get_data(self.myhash,
-                                               key='empty', ttl=1),
+        self.assertEqual(self.backend.get_data(self.myhash, key='empty'),
                          'sample text')
         time.sleep(2)
-        self.assertIsNone(self.backend.get_data(self.myhash,
-                                                key='empty', ttl=1))
+        self.assertIsNone(self.backend.get_data(self.myhash, key='empty'))
 
 
 class FileBackendTests(MemBackendTests):
@@ -257,39 +258,45 @@ class FileBackendTests(MemBackendTests):
     def setUp(self):
         self.clear_storage()
         self.backend = FileBackend('testfilecache.dat')
-        myhash = hashlib.md5('myhash'.encode('utf-8')).hexdigest()
-        myhash += hashlib.md5(myhash.encode('utf-8')).hexdigest()
+        myhash = hashlib.md5('myhash'.encode(DEFAULT_ENCODING)).hexdigest()
+        myhash += hashlib.md5(myhash.encode(DEFAULT_ENCODING)).hexdigest()
         self.myhash = myhash
 
     def tearDown(self):
         self.clear_storage()
 
 
-@unittest.skipIf(not crypto, "Skipped: Pycrypto is not installed.")
+@unittest.skipIf(not can_encrypt, "Skipped: Pycan_encrypt is not installed.")
 class CrypterTests(unittest.TestCase):
     def setUp(self):
-        self.cipher = AESCipher('scidam')
+        self.cipher = AESCipher('scidam'.encode(DEFAULT_ENCODING))
 
     def test_one_symbol_encrypt(self):
-        self.assertEqual(self.cipher.decrypt(self.cipher.encrypt('a')), 'a')
+        word = 'a'.encode(DEFAULT_ENCODING)
+        self.assertEqual(self.cipher.decrypt(self.cipher.encrypt(word)), word)
 
     def test_16byte_encrypt(self):
-        word = 'scidamanotherlog'
+        word = 'scidamanotherlog'.encode(DEFAULT_ENCODING)
         self.assertEqual(self.cipher.decrypt(self.cipher.encrypt(word)), word)
 
     def test_long_encrypt(self):
-        word = 'scidams'*123
+        word = ('scidams' * 123).encode(DEFAULT_ENCODING)
         self.assertEqual(self.cipher.decrypt(self.cipher.encrypt(word)), word)
 
     def test_64byte_encrypt(self):
-        word = 'scidamus'*8
+        word = ('scidamus' * 8).encode(DEFAULT_ENCODING)
         self.assertEqual(self.cipher.decrypt(self.cipher.encrypt(word)), word)
 
     def test_key_structure(self):
-        self.assertEqual(self.cipher.key, hashlib.md5('scidam').hexdigest())
+        expected = hashlib.md5('scidam'.encode(DEFAULT_ENCODING)).hexdigest().encode(DEFAULT_ENCODING)
+        self.assertEqual(self.cipher.key, expected)
 
     def test_empty_encrypt(self):
-        self.assertEqual(self.cipher.decrypt(self.cipher.encrypt('')), '')
+        if PY3:
+            self.assertEqual(self.cipher.decrypt(self.cipher.encrypt(bytes('',
+                                                 encoding=DEFAULT_ENCODING))), '')
+        else:
+            self.assertEqual(self.cipher.decrypt(self.cipher.encrypt('')), '')
 
 
 if __name__ == '__main__':
