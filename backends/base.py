@@ -1,8 +1,15 @@
-from ..utils import is_key_valid
+import warnings
+import datetime
+import threading
+from ..utils import (is_key_valid, can_encrypt, PY3,
+                     decode_safely, encode_safely, base_encoder, 
+                     basestring, DEFAULT_ENCODING)
+from ..crypter import *
 
+base_lock = threading.Lock()
 
 class BaseBackend(object):
-    """Base backend class
+    """Base backend class.
 
     Backends are used for storing and retrieving the data being cached.
 
@@ -14,95 +21,117 @@ class BaseBackend(object):
               (`pycrypto` required to enable encryption functionality)
     """
 
-    def to_string(self, data, key='', expired=None, noc=0, ncalls=0):
-        '''Serialize (and encrypt if `key` is provided) the data and represent it as a string
+    def _to_bytes(self, data, key='', expired=None, noc=0, ncalls=0):
+        """Serialize (and encrypt if `key` is provided) the data and represent it as a string.
 
         **Parameters**
 
-        :param data: any python serializable (by pickle) object
+        :param data: any python serializable (pickable) object
         :param key: If the key is provided and `pycrypto` is installed, cached
                     data will be encrypted (If `pycrypto` is not installed, this #TODO: pycrypto or something else?!
                     parameter will be ignored). Empty string by default.
         :param expired: exact date when the cache will be expired; It is `None` by default
         :param noc: the number of allowed calls; TODO: Clarify what does it mean, exactly?!!!!
+        :param ncalls: What is it; I don't understand!!! TODO: clarify this!!!!
         :type key: str
         :type expired: `datetime` or `None`
         :type noc: int
         :type ncalls: int
         :returns: serialized data
         :rtype: str
-        '''
+        """
+
         _key = key if is_key_valid(key) else None
 
         _tuple = (data, expired, noc, ncalls)
-        if not crypto and _key:
-            warnings.warn("Pycrypto not installed. Data isn't encrypted",
-                          RuntimeWarning)
-            result = _dump_safely_or_none(_tuple)
-        elif crypto and _key:
-            cipher = AESCipher(_key)
-            result = cipher.encrypt(_dump_safely_or_none(_tuple))
+        if not can_encrypt and _key:
+            # TODO: Probably not only Pycrypto will be using for encryption!!!
+            # Clarification needed
+            warnings.warn("Pycrypto is not installed. The data will not be encrypted",
+                          UserWarning)
+            result = encode_safely(_tuple)
+        elif can_encrypt and _key:
+            if PY3:
+                cipher = AESCipher(_key.encode(DEFAULT_ENCODING))
+            else:
+                cipher = AESCipher(_key)
+            result = cipher.encrypt(encode_safely(_tuple))
         else:
-            result = _dump_safely_or_none(_tuple)
+            result = encode_safely(_tuple)
         return result
 
-    def _fromstring(self, sdata, key=''):
-        '''
+    def _from_bytes(self, byte_data, key=''):
+        """
         Deserialize (and decrypt if key is provided) cached
-        data stored in the sdata (string).
+        data stored in the byte_data (bytes object).
+
+        # TODO: Full description of the method needed
 
         :param sdata: a string
         :param key: if provided (e.g. non-empty string), it
                     will be used to decrypt `sdata` as a password
         :type key: str, default is empty string
         :returns: a python object
-        '''
+        """
 
-        if sys.version_info >= (3, 0):
-            sdata = sdata.decode('utf-8')
-        _key = _validate_key(key)
-        if not isinstance(sdata, basestring):
-            warnings.warn("Input data must be a string", RuntimeWarning)
-            return
-        if not crypto and _key:
-            result = _load_safely_or_none(sdata)
-        elif crypto and _key:
-            cipher = AESCipher(_key)
-            result = _load_safely_or_none(cipher.decrypt(sdata))
+        _key = key if is_key_valid(key) else None
+
+        if not can_encrypt and _key:
+            result = decode_safely(byte_data)
+        elif can_encrypt and _key:
+            if PY3:
+                cipher = AESCipher(_key.encode(DEFAULT_ENCODING))
+            else:
+                cipher = AESCipher(_key)
+            result = decode_safely(cipher.decrypt(byte_data))
         else:
-            result = _load_safely_or_none(sdata)
+            result = decode_safely(byte_data)
         return result
 
-    def store_data(self, chash, data, key, expired, noc, ncalls):
-        self[chash] = self._tostring(data, key=key, expired=expired,
-                                     noc=noc, ncalls=ncalls)
+    def store_data(self, data_key, data, key, expired, noc, ncalls):
+        with base_lock:
+            self[data_key] = self._to_bytes(data, key=key, expired=expired,
+                                         noc=noc, ncalls=ncalls)
 
-    def get_data(self, chash, key='', ttl=0, noc=0):
-        '''
-        Get data from cache.
+    # This is semi-abstract method
+    def get(self, name='', default=None):
+        if 'get' in self.__dict__:
+            return self.get(name, default)
+        else:
+            raise NotImplementedError
 
-        :param chash: a string
-        :param key: if provided (e.g. non-empty string),
-                    will be used to decrypt sdata as a password
-        :param ttl: time-to-live in seconds
-        :param noc: maximum number of cached data retrieving
-        :type ttl: int
-        :type noc: int
-        :returns: a python object (representing sotred data)
-        '''
-        res = None
-        if chash in self:
-            res = self._fromstring(self[chash], key=key)
-        if isinstance(res, tuple):
-            updated = (res[0], res[1], res[2], res[3]+1)
-            self[chash] = self._tostring(updated[0], expired=updated[1],
-                                         key=key, noc=updated[2],
-                                         ncalls=updated[3])
-            if noc and updated[3] >= noc:
-                res = None
-                del self[chash]
-            if res is not None:
-                if ttl and datetime.datetime.now() > res[1]:
-                    res = None
-                    del self[chash]
-        return res[0] if res else None
+    def remove(self, name):
+        if name in self:
+            del self[name]
+        else:
+            raise NotImplementedError
+
+    def get_data(self, data_key, key=''):
+        """Get the data from the cache.
+
+        :param data_key: a key for accessing the data; 
+        :param key: if provided (e.g. non-empty string), will be used to
+                    decrypt the data as a password;
+        :returns: the data extracted from the cache, a python object.
+        """
+
+        with base_lock:
+            extracted = self.get(data_key, None)
+            if extracted is not None:
+                try:
+                    data, expired, noc, ncalls = self._from_bytes(extracted, key=key)
+                except ValueError:
+                    return None
+
+                if noc:
+                    ncalls += 1
+                    self[data_key] = self._to_bytes(data, expired=expired,
+                                                key=key, noc=noc,
+                                                ncalls=ncalls)
+                    if ncalls >= noc:
+                        self.remove(data_key)
+
+                if expired and datetime.datetime.now() > expired:
+                        self.remove(data_key)
+
+        return None if extracted is None else data

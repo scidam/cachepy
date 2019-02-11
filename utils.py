@@ -1,5 +1,6 @@
 import sys
 import warnings
+import hashlib
 from .conf import *
 
 PY3 = sys.version_info.major == 3 
@@ -25,7 +26,7 @@ from base64 import b64encode, b64decode
 if BASE_ENCODER == 'base64' and BASE_DECODER == 'base64':
     base_encoder = b64encode
     base_decoder = b64decode
-elif:  # TODO: Check if encoder is a function, that has some desired futures. 
+elif 1:  # TODO: Check if encoder is a function, that has some desired futures. 
     pass
 else:
     # TODO: SHOW WARNING HERE, SINCE THE ENCODER PROVIDED BY THE USER DOESN"T MEET REQUIREMENTS
@@ -97,12 +98,13 @@ def get_function_hash(func, args=None, kwargs=None, ttl=None, key=None):
             else:
                 base_hash.update(repr(a))
 
-    for k in sorted(kwargs):
-        if PY3:
-            base_hash.update(("%s=%s" % (k, repr(kwargs[k]))).encode(DEFAULT_ENCODING))
-        else:
-            base_hash.update(("%s=%s" % (k, repr(kwargs[k]))))
-    
+    if kwargs:
+        for k in sorted(kwargs):
+            if PY3:
+                base_hash.update(("%s=%s" % (k, repr(kwargs[k]))).encode(DEFAULT_ENCODING))
+            else:
+                base_hash.update(("%s=%s" % (k, repr(kwargs[k]))))
+        
     if ttl:
         base_hash.update(str(ttl).encode(DEFAULT_ENCODING)) # NOTE: ttl is int
 

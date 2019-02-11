@@ -1,4 +1,4 @@
-"""
+'''
 Caching results of functions in Python.
 
 Features
@@ -157,21 +157,10 @@ Log list
 
 .. codeauthor:: Dmitry Kislov <kislov@easydan.com>
 
-"""
+'''
 
-
-import hashlib
-import warnings
-import datetime
-import base64
-import shelve
-import sys
-from .utils import *
-
-# try:
-#     basestring = basestring
-# except NameError:
-#     basestring = str
+from .backends import (FileBackend, MemBackend)
+from .utils import get_function_hash
 
 # -------------------- Module meta info --------------------
 __author__ = "Dmitry E. Kislov"
@@ -189,35 +178,44 @@ class BaseCache(object):
     """
 
     def __init__(self, backend=None, key='', ttl=0, noc=0):
-        if isinstance(backend, basestring):
-            self.backend = FileBackend(backend)
-        else:
-            self.backend = MemBackend()
+        self.backend = backend
         self.ttl = ttl
         self.key = key
         self.noc = noc
 
     def __call__(self, func):
         def wrapper(*args, **kwargs):
-            current_hash = get_function_hash(func, args, kwargs,
-                                             self.ttl, self.key)
-            result = self.backend.get_data(current_hash,
-                                           key=self.key,
-                                           ttl=self.ttl, noc=self.noc)
+            data_key = get_function_hash(func, args, kwargs,
+                                         self.ttl, self.key)
+            result = self.backend.get_data(data_key,
+                                           key=self.key)
             if result is not None:
                 return result
             else:
                 result = func(*args, **kwargs)
-                self.backend.store_data(current_hash, result, key=self.key,
+                self.backend.store_data(data_key, result, key=self.key,
                                         ttl=self.ttl, noc=self.noc, ncalls=0)
-            if isinstance(self.backend, FileBackend):
-                self.backend.sync()
             return result
         return wrapper
 
 
 class Cache(BaseCache):
-    """Caching decorator constructor"""
+    """Caches the result of a function execution in memory.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.backend = MemBackend()
+
+
+class FileCache(BaseCache):
+    """Caches the result of a function execution in memory.
+    """
+
+    def __init__(self, filename, **kwargs):
+        super().__init__(**kwargs)
+        self.backend = FileBackend(filename)
+
 
 
 # ----------------- Shortcuts  --------------------------
