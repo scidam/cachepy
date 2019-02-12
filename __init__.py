@@ -159,8 +159,10 @@ Log list
 
 '''
 
+import threading
 from .backends import (FileBackend, MemBackend)
-from .utils import get_function_hash
+from .utils import get_function_hash, PY3
+
 
 # -------------------- Module meta info --------------------
 __author__ = "Dmitry E. Kislov"
@@ -170,11 +172,13 @@ __maintainer__ = "Dmitry E. Kislov"
 __email__ = "kislov@easydan.com"
 # ----------------------------------------------------------
 
-__all__ = ('Cache', 'memcache')
+__all__ = ('Cache', 'memcache', 'FileBackend', 'MemBackend')
+
+base_lock = threading.Lock()
 
 
 class BaseCache(object):
-    """Abstract class for caching decorator.
+    """Abstract class for cache decorator.
     """
 
     def __init__(self, backend=None, key='', ttl=0, noc=0):
@@ -187,14 +191,14 @@ class BaseCache(object):
         def wrapper(*args, **kwargs):
             data_key = get_function_hash(func, args, kwargs,
                                          self.ttl, self.key)
-            result = self.backend.get_data(data_key,
-                                           key=self.key)
-            if result is not None:
-                return result
-            else:
+            with base_lock:
+                result, flag = self.backend.get_data(data_key,
+                                                     key=self.key)
+            if not flag:
                 result = func(*args, **kwargs)
-                self.backend.store_data(data_key, result, key=self.key,
-                                        ttl=self.ttl, noc=self.noc, ncalls=0)
+                with base_lock:
+                    self.backend.store_data(data_key, result, key=self.key,
+                                            ttl=self.ttl, noc=self.noc, ncalls=0)
             return result
         return wrapper
 
@@ -204,7 +208,7 @@ class Cache(BaseCache):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(Cache, self).__init__(*args, **kwargs)
         self.backend = MemBackend()
 
 
@@ -213,7 +217,7 @@ class FileCache(BaseCache):
     """
 
     def __init__(self, filename, **kwargs):
-        super().__init__(**kwargs)
+        super(Cache, self).__init__(**kwargs)
         self.backend = FileBackend(filename)
 
 

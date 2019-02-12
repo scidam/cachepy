@@ -1,12 +1,11 @@
 import warnings
 import datetime
-import threading
 from ..utils import (is_key_valid, can_encrypt, PY3,
                      decode_safely, encode_safely, base_encoder, 
-                     basestring, DEFAULT_ENCODING)
-from ..crypter import *
+                     DEFAULT_ENCODING)
+if can_encrypt:
+    from ..crypter import AESCipher
 
-base_lock = threading.Lock()
 
 class BaseBackend(object):
     """Base backend class.
@@ -41,7 +40,7 @@ class BaseBackend(object):
         :rtype: str
         """
 
-        _key = key if is_key_valid(key) else None
+        _key = key if is_key_valid(key) else ''
 
         _tuple = (data, expired, noc, ncalls)
         if not can_encrypt and _key:
@@ -79,19 +78,15 @@ class BaseBackend(object):
         if not can_encrypt and _key:
             result = decode_safely(byte_data)
         elif can_encrypt and _key:
-            if PY3:
-                cipher = AESCipher(_key.encode(DEFAULT_ENCODING))
-            else:
-                cipher = AESCipher(_key)
+            cipher = AESCipher(_key)
             result = decode_safely(cipher.decrypt(byte_data))
         else:
             result = decode_safely(byte_data)
         return result
 
     def store_data(self, data_key, data, key, expired, noc, ncalls):
-        with base_lock:
-            self[data_key] = self._to_bytes(data, key=key, expired=expired,
-                                         noc=noc, ncalls=ncalls)
+        self[data_key] = self._to_bytes(data, key=key, expired=expired,
+                                        noc=noc, ncalls=ncalls)
 
     # This is semi-abstract method
     def get(self, name='', default=None):
@@ -114,24 +109,27 @@ class BaseBackend(object):
                     decrypt the data as a password;
         :returns: the data extracted from the cache, a python object.
         """
+        
+        flag = False
+        extracted = self.get(data_key, -1)
+        if extracted != -1:
+            try:
+                data, expired, noc, ncalls = self._from_bytes(extracted, key=key)
+                flag = True
+            except ValueError:
+                return None, flag
 
-        with base_lock:
-            extracted = self.get(data_key, None)
-            if extracted is not None:
-                try:
-                    data, expired, noc, ncalls = self._from_bytes(extracted, key=key)
-                except ValueError:
-                    return None
-
-                if noc:
-                    ncalls += 1
-                    self[data_key] = self._to_bytes(data, expired=expired,
+            if noc:
+                ncalls += 1
+                self[data_key] = self._to_bytes(data, expired=expired,
                                                 key=key, noc=noc,
                                                 ncalls=ncalls)
-                    if ncalls >= noc:
-                        self.remove(data_key)
+                if ncalls >= noc:
+                    self.remove(data_key)
+                    flag = False
 
-                if expired and datetime.datetime.now() > expired:
-                        self.remove(data_key)
+            if expired and datetime.datetime.now() > expired:
+                    self.remove(data_key)
+                    flag = False
 
-        return None if extracted is None else data
+        return (data, flag) if flag else (None, flag)

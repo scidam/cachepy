@@ -1,9 +1,8 @@
 import sys
 import warnings
 import hashlib
+from base64 import b64encode, b64decode
 from .conf import *
-
-PY3 = sys.version_info.major == 3 
 
 try:
     import cPickle as pickle
@@ -11,23 +10,19 @@ except ImportError:
     import pickle
 
 try:
-    basestring = basestring
-except NameError:
-    basestring = str
-
-try:
     from .crypter import AESCipher
     can_encrypt = True
 except ImportError:
     can_encrypt = False
 
-from base64 import b64encode, b64decode
+PY3 = sys.version_info.major == 3 
 
 if BASE_ENCODER == 'base64' and BASE_DECODER == 'base64':
     base_encoder = b64encode
     base_decoder = b64decode
-elif 1:  # TODO: Check if encoder is a function, that has some desired futures. 
-    pass
+elif callable(BASE_ENCODER) and callable(BASE_DECODER):
+    base_encoder=BASE_ENCODER
+    base_decoder=BASE_DECODER
 else:
     # TODO: SHOW WARNING HERE, SINCE THE ENCODER PROVIDED BY THE USER DOESN"T MEET REQUIREMENTS
     base_encoder = b64encode
@@ -38,10 +33,7 @@ def is_key_valid(key):
     """Check if the key is valid or not.
     """
 
-    if isinstance(key, basestring):
-        if MIN_KEY_LENGTH <= len(key) <= MAX_KEY_LENGTH:
-            return True
-    return False
+    return MIN_KEY_LENGTH <= len(key) <= MAX_KEY_LENGTH
 
 
 def encode_safely(data, encoder=base_encoder):
@@ -80,7 +72,6 @@ def get_function_hash(func, args=None, kwargs=None, ttl=None, key=None):
     """Compute the hash of the function to be evaluated.
 
     # TODO: Full description of the algorithm needed!!!!
-
     """
 
     base_hash = hashlib.sha256()
@@ -101,12 +92,12 @@ def get_function_hash(func, args=None, kwargs=None, ttl=None, key=None):
     if kwargs:
         for k in sorted(kwargs):
             if PY3:
-                base_hash.update(("%s=%s" % (k, repr(kwargs[k]))).encode(DEFAULT_ENCODING))
+                base_hash.update(("{}={}".format(k, repr(kwargs[k]))).encode(DEFAULT_ENCODING))
             else:
-                base_hash.update(("%s=%s" % (k, repr(kwargs[k]))))
+                base_hash.update(("{}={}".format(k, repr(kwargs[k]))))
         
     if ttl:
-        base_hash.update(str(ttl).encode(DEFAULT_ENCODING)) # NOTE: ttl is int
+        base_hash.update(str(ttl).encode(DEFAULT_ENCODING))
 
     if key and can_encrypt:
         if PY3:

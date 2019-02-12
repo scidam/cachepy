@@ -2,7 +2,11 @@ import hashlib
 import time
 import unittest
 
-from .utils import get_function_hash, PY3, can_encrypt, AESCipher
+from .utils import get_function_hash, PY3, can_encrypt
+
+if can_encrypt:
+    from .utils import AESCipher
+
 from . import FileBackend, MemBackend, Cache
 from .conf import DEFAULT_ENCODING
 
@@ -18,6 +22,7 @@ except ImportError:
 
 
 # ------------------- Simple functions to be cached --------------
+
 def function_to_cache():
     return [1, 2, 3, 4, 5]
 
@@ -36,6 +41,9 @@ def function_returns_dict(x):
 
 def function_returns_random_numpy(size):
     return np.random.rand(size, size)
+
+def function_returns_none(x):
+    return None
 # ----------------------------------------------------------------
 
     
@@ -93,7 +101,7 @@ class BaseCacheHasherTests(unittest.TestCase):
         if can_encrypt:
             res = self.hasher('function_to_cache[]0nothing')
         else:
-            res = self.hasher('function_to_cache')
+            res = self.hasher('function_to_cache[]0')
         self.assertEqual(res, computed)
 
     def test_get_function_hash_with_key_pars(self):
@@ -145,6 +153,13 @@ class BaseCacheToMemTests(unittest.TestCase):
         self.decorator_key = Cache(key='a')
         self.decorator_key_ttl_noc = Cache(key='a', ttl=1, noc=2)
 
+    def test_function_returns_none(self):
+        simple = self.decorator(function_returns_none)
+        simple(3)
+        data, flag = self.decorator.backend.get_data(get_function_hash(function_returns_none, args=(3,)))
+        self.assertTrue(flag)
+        self.assertIsNone(data)
+
     def test_simple_function(self):
         simple = self.decorator(function_to_cache)
         self.assertEqual(simple(), [1, 2, 3, 4, 5])
@@ -170,9 +185,10 @@ class BaseCacheToMemTests(unittest.TestCase):
     @unittest.skipIf(not np, "Skipped: Numpy is not installed.")
     def test_function_returns_np_noc(self):
         npfun = self.decorator_key_ttl_noc(function_returns_random_numpy)
-        res = npfun(2)
-        res1 = npfun(2)
-        res2 = npfun(2)
+        res = npfun(2) # compute the value
+        res1 = npfun(2) # get the value from cache
+        npfun(2) # get the value from cache
+        res2 = npfun(2) # recompute the value
         np.testing.assert_array_equal(res, res1)
         self.assertFalse((res == res2).all())
 
@@ -216,34 +232,35 @@ class MemBackendTests(unittest.TestCase):
 
     def test_store_to_mem(self):
         self.backend.store_data(self.myhash, 'sample text')
-        self.assertEqual(self.backend.get_data(self.myhash), 'sample text')
+        self.assertEqual(self.backend.get_data(self.myhash)[0], 'sample text')
 
     def test_store_to_mem_with_ttl(self):
         self.backend.store_data(self.myhash, 'sample text', ttl=1)
-        self.assertEqual(self.backend.get_data(self.myhash), 'sample text')
+        self.assertEqual(self.backend.get_data(self.myhash)[0], 'sample text')
         time.sleep(2)
-        self.assertIsNone(self.backend.get_data(self.myhash))
+        self.assertIsNone(self.backend.get_data(self.myhash)[0])
 
     def test_store_to_mem_with_key(self):
         self.backend.store_data(self.myhash, 'sample text', key='empty')
-        self.assertEqual(self.backend.get_data(self.myhash, key='empty'),
+        self.assertEqual(self.backend.get_data(self.myhash, key='empty')[0],
                          'sample text')
 
     def test_store_to_mem_with_key_noc(self):
         self.backend.store_data(self.myhash, 'sample text', key='empty', noc=4)
-        self.assertEqual(self.backend.get_data(self.myhash, key='empty'),
+        self.assertEqual(self.backend.get_data(self.myhash, key='empty')[0],
                          'sample text')
         for x in range(7):
             self.backend.get_data(self.myhash, key='empty')
-        self.assertIsNone(self.backend.get_data(self.myhash, key='empty'))
+        self.assertIsNone(self.backend.get_data(self.myhash, key='empty')[0])
 
     def test_store_to_mem_with_key_ttl(self):
         self.backend.store_data(self.myhash, 'sample text', key='empty',
                                 noc=0, ttl=1)
-        self.assertEqual(self.backend.get_data(self.myhash, key='empty'),
+        self.assertEqual(self.backend.get_data(self.myhash, key='empty')[0],
                          'sample text')
         time.sleep(2)
-        self.assertIsNone(self.backend.get_data(self.myhash, key='empty'))
+        self.assertIsNone(self.backend.get_data(self.myhash, key='empty')[0])
+
 
 
 class FileBackendTests(MemBackendTests):
@@ -264,6 +281,8 @@ class FileBackendTests(MemBackendTests):
 
     def tearDown(self):
         self.clear_storage()
+    
+    # TODO:  Some test should be written!!!
 
 
 @unittest.skipIf(not can_encrypt, "Skipped: Pycan_encrypt is not installed.")
@@ -292,12 +311,7 @@ class CrypterTests(unittest.TestCase):
         self.assertEqual(self.cipher.key, expected)
 
     def test_empty_encrypt(self):
-        if PY3:
-            self.assertEqual(self.cipher.decrypt(self.cipher.encrypt(bytes('',
-                                                 encoding=DEFAULT_ENCODING))), '')
-        else:
-            self.assertEqual(self.cipher.decrypt(self.cipher.encrypt('')), '')
-
+        self.assertEqual(self.cipher.decrypt(self.cipher.encrypt(b'')), b'')
 
 if __name__ == '__main__':
     unittest.main()

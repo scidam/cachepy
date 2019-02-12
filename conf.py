@@ -1,6 +1,6 @@
 
 # Allowed key length
-MAX_KEY_LENGTH = 1000
+MAX_KEY_LENGTH = 100
 MIN_KEY_LENGTH = 3
 
 #ENCODER
