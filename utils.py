@@ -68,7 +68,7 @@ def decode_safely(encoded_data, decoder=base_decoder):
     return result
 
 
-def get_function_hash(func, args=None, kwargs=None, ttl=None, key=None):
+def get_function_hash(func, args=None, kwargs=None, ttl=None, key=None, noc=None):
     """Compute the hash of the function to be evaluated.
 
     # TODO: Full description of the algorithm needed!!!!
@@ -95,7 +95,7 @@ def get_function_hash(func, args=None, kwargs=None, ttl=None, key=None):
                 base_hash.update(("{}={}".format(k, repr(kwargs[k]))).encode(DEFAULT_ENCODING))
             else:
                 base_hash.update(("{}={}".format(k, repr(kwargs[k]))))
-        
+
     if ttl:
         base_hash.update(str(ttl).encode(DEFAULT_ENCODING))
 
@@ -104,7 +104,10 @@ def get_function_hash(func, args=None, kwargs=None, ttl=None, key=None):
             base_hash.update(key.encode(DEFAULT_ENCODING))
         else:
             base_hash.update(key)
-    
+
+    if noc:
+        base_hash.update(str(noc).encode(DEFAULT_ENCODING))
+
     base_hash_hex = base_hash.hexdigest()
     complementary_hash.update(base_hash_hex.encode(DEFAULT_ENCODING))
 

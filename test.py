@@ -42,11 +42,11 @@ def function_returns_dict(x):
 def function_returns_random_numpy(size):
     return np.random.rand(size, size)
 
+
 def function_returns_none(x):
     return None
 # ----------------------------------------------------------------
 
-    
 
 class BaseCacheHasherTests(unittest.TestCase):
 
@@ -152,6 +152,14 @@ class BaseCacheToMemTests(unittest.TestCase):
         self.decorator = Cache()
         self.decorator_key = Cache(key='a')
         self.decorator_key_ttl_noc = Cache(key='a', ttl=1, noc=2)
+
+    def test_cache_clearing(self):
+        simple = self.decorator(function_to_cache)
+        simple()
+        self.assertEqual(self.decorator.backend.get_data(get_function_hash(function_to_cache, args=tuple()))[0], [1, 2, 3, 4, 5])
+        simple.clear()
+        _, flag = self.decorator.backend.get_data(get_function_hash(function_to_cache, args=tuple()))
+        self.assertFalse(flag)
 
     def test_function_returns_none(self):
         simple = self.decorator(function_returns_none)
@@ -260,7 +268,6 @@ class MemBackendTests(unittest.TestCase):
                          'sample text')
         time.sleep(2)
         self.assertIsNone(self.backend.get_data(self.myhash, key='empty')[0])
-
 
 
 class FileBackendTests(MemBackendTests):

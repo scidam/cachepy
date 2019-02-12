@@ -162,6 +162,7 @@ Log list
 import threading
 from .backends import (FileBackend, MemBackend)
 from .utils import get_function_hash, PY3
+from functools import wraps
 
 
 # -------------------- Module meta info --------------------
@@ -188,18 +189,26 @@ class BaseCache(object):
         self.noc = noc
 
     def __call__(self, func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
-            data_key = get_function_hash(func, args, kwargs,
-                                         self.ttl, self.key)
+            self.data_key = get_function_hash(func, args, kwargs,
+                                              self.ttl, self.key, self.noc)
             with base_lock:
-                result, flag = self.backend.get_data(data_key,
+                result, flag = self.backend.get_data(self.data_key,
                                                      key=self.key)
             if not flag:
                 result = func(*args, **kwargs)
                 with base_lock:
-                    self.backend.store_data(data_key, result, key=self.key,
-                                            ttl=self.ttl, noc=self.noc, ncalls=0)
+                    self.backend.store_data(self.data_key, result,
+                                            key=self.key, ttl=self.ttl,
+                                            noc=self.noc, ncalls=0)
             return result
+
+        def clear():
+            with base_lock:
+                self.backend.remove(self.data_key)
+
+        wrapper.clear = clear
         return wrapper
 
 
@@ -219,8 +228,6 @@ class FileCache(BaseCache):
     def __init__(self, filename, **kwargs):
         super(Cache, self).__init__(**kwargs)
         self.backend = FileBackend(filename)
-
-
 
 # ----------------- Shortcuts  --------------------------
 memcache = Cache()
