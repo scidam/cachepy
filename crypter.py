@@ -6,7 +6,7 @@ import sys
 from Crypto import Random
 from Crypto.Cipher import AES
 from Crypto.Hash import SHAKE128
-from .conf import DEFAULT_ENCODING
+from .conf import settings
 
 PY3 = sys.version_info.major == 3
 
@@ -17,14 +17,14 @@ def to_bytes(obj):
 
     if PY3:
         if isinstance(obj, str):
-            return obj.encode(DEFAULT_ENCODING)
+            return obj.encode(settings.DEFAULT_ENCODING)
         else:
             return obj if isinstance(obj, bytes) else b''
     else:
         if isinstance(obj, str):
             return obj
         else:
-            return obj.encode(DEFAULT_ENCODING) if isinstance(obj, unicode) else ''
+            return obj.encode(settings.DEFAULT_ENCODING) if isinstance(obj, unicode) else ''
 
 
 def padding(s, bs=AES.block_size):
@@ -36,7 +36,7 @@ def padding(s, bs=AES.block_size):
     if len(s) % bs == 0:
         res = s + b''.join(map(to_bytes, [random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(bs - 1)])) + to_bytes(chr(96 - bs))
     elif len(s) % bs > 0 and len(s) > bs:
-        res = s + b''.join(map(to_bytes, [random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(bs - len(s) % bs -1)])) + to_bytes(chr(96 + len(s) % bs - bs))
+        res = s + b''.join(map(to_bytes, [random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(bs - len(s) % bs - 1)])) + to_bytes(chr(96 + len(s) % bs - bs))
     else:
         res = s + b''.join(map(to_bytes, [random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(bs - len(s) - 1)])) + to_bytes(chr(96 + len(s) - bs))
     return res
@@ -53,9 +53,9 @@ def unpadding(s, bs=AES.block_size):
     """
 
     if PY3:
-        return s[:s[-1]-96] if len(s) % bs == 0 else ''
+        return s[:s[-1] - 96] if len(s) % bs == 0 else ''
     else:
-        return s[:ord(s[-1])-96] if len(s) % bs == 0 else ''
+        return s[:ord(s[-1]) - 96] if len(s) % bs == 0 else ''
 
 
 class AESCipher:

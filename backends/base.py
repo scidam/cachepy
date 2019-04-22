@@ -1,6 +1,6 @@
 import warnings
 import datetime
-from ..utils import (is_key_valid, can_encrypt, PY3,
+from ..utils import (can_encrypt, PY3,
                      decode_safely, encode_safely, base_encoder, 
                      DEFAULT_ENCODING)
 if can_encrypt:
