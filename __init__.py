@@ -175,11 +175,11 @@ __email__ = "kislov@easydan.com"
 
 __all__ = ('Cache', 'memcache', 'FileBackend', 'MemBackend')
 
-base_lock = threading.Lock()
+BASE_LOCK = threading.Lock()
 
 
 class BaseCache(object):
-    """Abstract class for cache decorator.
+    """Base class for cache decorator.
     """
 
     def __init__(self, backend=None, key='', ttl=0, noc=0):
@@ -187,33 +187,39 @@ class BaseCache(object):
         self.ttl = ttl
         self.key = key
         self.noc = noc
+        self.is_used = False
 
     def __call__(self, func):
+        if self.is_used:
+            raise RuntimeError("This cahing decorator is already used."
+                               " Create another one.")
+
         @wraps(func)
         def wrapper(*args, **kwargs):
             self.data_key = get_function_hash(func, args, kwargs,
                                               self.ttl, self.key, self.noc)
-            with base_lock:
+            with BASE_LOCK:
                 result, flag = self.backend.get_data(self.data_key,
                                                      key=self.key)
             if not flag:
                 result = func(*args, **kwargs)
-                with base_lock:
+                with BASE_LOCK:
                     self.backend.store_data(self.data_key, result,
                                             key=self.key, ttl=self.ttl,
                                             noc=self.noc, ncalls=0)
             return result
 
         def clear():
-            with base_lock:
+            with BASE_LOCK:
                 self.backend.remove(self.data_key)
 
         wrapper.clear = clear
+        self.is_used = True
         return wrapper
 
 
 class Cache(BaseCache):
-    """Caches the result of a function execution in memory.
+    """Cache results of function execution in memory.
     """
 
     def __init__(self, *args, **kwargs):
@@ -226,7 +232,7 @@ class FileCache(BaseCache):
     """
 
     def __init__(self, filename, **kwargs):
-        super(Cache, self).__init__(**kwargs)
+        super(FileCache, self).__init__(**kwargs)
         self.backend = FileBackend(filename)
 
 # ----------------- Shortcuts  --------------------------
