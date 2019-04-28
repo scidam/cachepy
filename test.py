@@ -8,7 +8,9 @@ if can_encrypt:
     from .utils import AESCipher
 
 from . import FileBackend, MemBackend, Cache
-from .conf import DEFAULT_ENCODING
+from .conf import settings
+
+DEFAULT_ENCODING = settings.DEFAULT_ENCODING
 
 try:
     import cPickle as pickle
@@ -52,16 +54,12 @@ class BaseCacheHasherTests(unittest.TestCase):
 
     def hasher(self, s):
         ss = hashlib.sha256()
-        ww = hashlib.md5()
         if PY3:
             ss.update(s.encode(DEFAULT_ENCODING))
-            ss = ss.hexdigest()
-            ww.update(ss.encode(DEFAULT_ENCODING))
         else:
             ss.update(s)
-            ss = ss.hexdigest()
-            ww.update(ss)
-        return ss + ww.hexdigest()
+        ss = ss.hexdigest()
+        return ss
 
     def setUp(self):
         self.mycache = Cache(None)
@@ -161,6 +159,11 @@ class BaseCacheToMemTests(unittest.TestCase):
         _, flag = self.decorator.backend.get_data(get_function_hash(function_to_cache, args=tuple()))
         self.assertFalse(flag)
 
+    def test_two_functions_same_decorator(self):
+        simple = self.decorator(function_to_cache)
+        with self.assertRaises(RuntimeError):
+                simple1 = self.decorator(function_returns_none)
+ 
     def test_function_returns_none(self):
         simple = self.decorator(function_returns_none)
         simple(3)
@@ -319,6 +322,13 @@ class CrypterTests(unittest.TestCase):
 
     def test_empty_encrypt(self):
         self.assertEqual(self.cipher.decrypt(self.cipher.encrypt(b'')), b'')
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
