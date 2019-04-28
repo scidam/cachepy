@@ -1,8 +1,11 @@
 import warnings
 import datetime
-from ..utils import (can_encrypt, PY3,
-                     decode_safely, encode_safely, base_encoder, 
+from ..utils import (can_encrypt, PY3, decode_safely, encode_safely,
                      DEFAULT_ENCODING)
+
+from .conf import settings
+
+
 if can_encrypt:
     from ..crypter import AESCipher
 
@@ -10,9 +13,10 @@ if can_encrypt:
 class BaseBackend(object):
     """Base backend class.
 
-    Backends are used for storing and retrieving the data being cached.
+    Backends are used for control processes of storing and retrieving cached data.
 
     TODO: Verify docstrings!!!!
+
     .. note::
             - Backend is a dict-like object, that performs storing and
               retrieving data via backend['chash'] (e.g. `__getitem__`, `__setitem__`)
@@ -21,42 +25,41 @@ class BaseBackend(object):
     """
 
     def _to_bytes(self, data, key='', expired=None, noc=0, ncalls=0):
-        """Serialize (and encrypt if `key` is provided) the data and represent it as a string.
+        """Serialize (and encrypt if `key` is provided) the data and represent it as string.
 
         **Parameters**
 
-        :param data: any python serializable (pickable) object
-        :param key: If the key is provided and `pycrypto` is installed, cached
-                    data will be encrypted (If `pycrypto` is not installed, this #TODO: pycrypto or something else?!
-                    parameter will be ignored). Empty string by default.
-        :param expired: exact date when the cache will be expired; It is `None` by default
-        :param noc: the number of allowed calls; TODO: Clarify what does it mean, exactly?!!!!
-        :param ncalls: What is it; I don't understand!!! TODO: clarify this!!!!
-        :type key: str
-        :type expired: `datetime` or `None`
-        :type noc: int
-        :type ncalls: int
-        :returns: serialized data
-        :rtype: str
+            :param data: any python serializable (pickable) object
+            :param key: If the key is provided and `pycrypto` is installed, cached
+                        data will be encrypted (If `pycrypto` is not installed, this #TODO: pycrypto or something else?!
+                        parameter will be ignored). Empty string by default.
+            :param expired: exact date when the cache will be expired; It is `None` by default
+            :param noc: the number of allowed calls; TODO: Clarify what does it mean, exactly?!!!!
+            :param ncalls: What is it; I don't understand!!! TODO: clarify this!!!!
+            :type key: str
+            :type expired: `datetime` or `None`
+            :type noc: int
+            :type ncalls: int
+            :returns: serialized data
+            :rtype: str
         """
 
-        _key = key if is_key_valid(key) else ''
+        data_tuple = (data, expired, noc, ncalls)
 
-        _tuple = (data, expired, noc, ncalls)
-        if not can_encrypt and _key:
+        if not can_encrypt and key:
             # TODO: Probably not only Pycrypto will be using for encryption!!!
             # Clarification needed
             warnings.warn("Pycrypto is not installed. The data will not be encrypted",
                           UserWarning)
-            result = encode_safely(_tuple)
-        elif can_encrypt and _key:
+            result = encode_safely(data_tuple)
+        elif can_encrypt and key:
             if PY3:
-                cipher = AESCipher(_key.encode(DEFAULT_ENCODING))
+                cipher = AESCipher(key.encode(settings.DEFAULT_ENCODING))
             else:
-                cipher = AESCipher(_key)
-            result = cipher.encrypt(encode_safely(_tuple))
+                cipher = AESCipher(key)
+            result = cipher.encrypt(encode_safely(data_tuple))
         else:
-            result = encode_safely(_tuple)
+            result = encode_safely(data_tuple)
         return result
 
     def _from_bytes(self, byte_data, key=''):
@@ -73,12 +76,10 @@ class BaseBackend(object):
         :returns: a python object
         """
 
-        _key = key if is_key_valid(key) else None
-
-        if not can_encrypt and _key:
+        if not can_encrypt and key:
             result = decode_safely(byte_data)
-        elif can_encrypt and _key:
-            cipher = AESCipher(_key)
+        elif can_encrypt and key:
+            cipher = AESCipher(key)
             result = decode_safely(cipher.decrypt(byte_data))
         else:
             result = decode_safely(byte_data)
