@@ -8,7 +8,7 @@ else:
 
 
 class MemBackend(UserDict, BaseBackend):
-    """Used to store the cached data in memory.
+    """Store cached data in memory.
     """
 
     def store_data(self, data_key, data, key='', ttl=0, noc=0, ncalls=0):
@@ -16,5 +16,6 @@ class MemBackend(UserDict, BaseBackend):
             expired = datetime.datetime.now() + datetime.timedelta(seconds=ttl)
         else:
             expired = None
-        super(MemBackend, self).store_data(data_key, data, key=key, expired=expired,
-                                           noc=noc, ncalls=ncalls)
+        super(MemBackend, self).store_data(data_key, data, key=key,
+                                           expired=expired, noc=noc,
+                                           ncalls=ncalls)
