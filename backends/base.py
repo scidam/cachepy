@@ -1,9 +1,8 @@
 import warnings
 import datetime
-from ..utils import (can_encrypt, PY3, decode_safely, encode_safely,
-                     DEFAULT_ENCODING)
+from ..utils import can_encrypt, PY3, decode_safely, encode_safely
 
-from .conf import settings
+from ..conf import settings
 
 
 if can_encrypt:
@@ -63,8 +62,7 @@ class BaseBackend(object):
         return result
 
     def _from_bytes(self, byte_data, key=''):
-        """
-        Deserialize (and decrypt if key is provided) cached
+        """Deserialize (and decrypt if key is provided) cached
         data stored in the byte_data (bytes object).
 
         # TODO: Full description of the method needed
@@ -89,12 +87,8 @@ class BaseBackend(object):
         self[data_key] = self._to_bytes(data, key=key, expired=expired,
                                         noc=noc, ncalls=ncalls)
 
-    # This is semi-abstract method
     def get(self, name='', default=None):
-        if 'get' in self.__dict__:
-            return self.get(name, default)
-        else:
-            raise NotImplementedError
+        raise NotImplementedError
 
     def remove(self, name):
         if not hasattr(self, '__contains__'):
@@ -110,9 +104,10 @@ class BaseBackend(object):
                     decrypt the data as a password;
         :returns: the data extracted from the cache, a python object.
         """
-        
-        flag = False
+
+        flag = False  # set to True if data was successfully extracted.
         extracted = self.get(data_key, -1)
+
         if extracted != -1:
             try:
                 data, expired, noc, ncalls = self._from_bytes(extracted, key=key)
@@ -130,7 +125,7 @@ class BaseBackend(object):
                     flag = False
 
             if expired and datetime.datetime.now() > expired:
-                    self.remove(data_key)
-                    flag = False
+                self.remove(data_key)
+                flag = False
 
         return (data, flag) if flag else (None, flag)
