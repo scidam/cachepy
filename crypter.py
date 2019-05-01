@@ -5,7 +5,6 @@ import hashlib
 import sys
 from Crypto import Random
 from Crypto.Cipher import AES
-from Crypto.Hash import SHAKE128
 from .conf import settings
 
 PY3 = sys.version_info.major == 3

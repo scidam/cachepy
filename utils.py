@@ -59,7 +59,6 @@ class Helpers(object):
             warnings.warn("Data could not be serialized.", RuntimeWarning)
         return result
 
-
     def decode_safely(self, encoded_data):
         """Inverse for the `encode_safely` function.
         """
@@ -113,7 +112,6 @@ class Helpers(object):
         base_hash_hex = base_hash.hexdigest()
 
         return base_hash_hex
-
 
 
 _helper = Helpers()

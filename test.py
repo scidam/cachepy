@@ -162,8 +162,9 @@ class BaseCacheToMemTests(unittest.TestCase):
     def test_two_functions_same_decorator(self):
         simple = self.decorator(function_to_cache)
         with self.assertRaises(RuntimeError):
-                simple1 = self.decorator(function_returns_none)
- 
+            # The `simple` decorator is already used, exception should be raised here.
+            simple1 = self.decorator(function_returns_none)
+
     def test_function_returns_none(self):
         simple = self.decorator(function_returns_none)
         simple(3)
@@ -322,12 +323,6 @@ class CrypterTests(unittest.TestCase):
 
     def test_empty_encrypt(self):
         self.assertEqual(self.cipher.decrypt(self.cipher.encrypt(b'')), b'')
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

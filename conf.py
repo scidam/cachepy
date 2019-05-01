@@ -1,4 +1,5 @@
 import hashlib
+from base64 import b64decode, b64encode
 
 __all__ = ('settings', )
  
@@ -9,9 +10,9 @@ class Settings:
     MAX_KEY_LENGTH = 100
     MIN_KEY_LENGTH = 3
 
-    #ENCODER
-    BASE_ENCODER = 'base64'
-    BASE_DECODER = 'base64'
+    # ENCODER & decoder
+    BASE_ENCODER = b64encode
+    BASE_DECODER = b64decode
 
     DEFAULT_ENCODING = 'utf-8'
 
