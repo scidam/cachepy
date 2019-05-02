@@ -1,6 +1,7 @@
 import hashlib
 import time
 import unittest
+import base64
 
 from .utils import get_function_hash, PY3, can_encrypt
 
@@ -239,7 +240,6 @@ class MemBackendTests(unittest.TestCase):
     def setUp(self):
         self.backend = MemBackend()
         myhash = hashlib.md5('myhash'.encode(DEFAULT_ENCODING)).hexdigest()
-        myhash += hashlib.md5(myhash.encode(DEFAULT_ENCODING)).hexdigest()
         self.myhash = myhash
 
     def test_store_to_mem(self):
@@ -261,7 +261,7 @@ class MemBackendTests(unittest.TestCase):
         self.backend.store_data(self.myhash, 'sample text', key='empty', noc=4)
         self.assertEqual(self.backend.get_data(self.myhash, key='empty')[0],
                          'sample text')
-        for x in range(7):
+        for _ in range(7):
             self.backend.get_data(self.myhash, key='empty')
         self.assertIsNone(self.backend.get_data(self.myhash, key='empty')[0])
 
@@ -272,6 +272,23 @@ class MemBackendTests(unittest.TestCase):
                          'sample text')
         time.sleep(2)
         self.assertIsNone(self.backend.get_data(self.myhash, key='empty')[0])
+
+
+class ChangingSettingsOnTheFly(unittest.TestCase):
+    def setUp(self):
+        from .conf import settings
+        self.backend = MemBackend()
+        self.settings = settings
+        self.old_decoder = self.settings.BASE_DECODER
+
+    def test_switching_settings(self):
+        self.backend.store_data('hash_value', 'sample text to be stored')
+        self.settings.BASE_DECODER = staticmethod(base64.b16decode)
+        with self.assertRaises(RuntimeWarning):
+            val, fl = self.backend.get_data('hash_value')
+
+    def tearDown(self):
+        self.settings.BASE_DECODER = self.old_decoder
 
 
 class FileBackendTests(MemBackendTests):

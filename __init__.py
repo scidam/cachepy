@@ -168,12 +168,12 @@ from functools import wraps
 # -------------------- Module meta info --------------------
 __author__ = "Dmitry E. Kislov"
 __license__ = "MIT"
-__version__ = "0.1"
+__version__ = "1.0"
 __maintainer__ = "Dmitry E. Kislov"
 __email__ = "kislov@easydan.com"
 # ----------------------------------------------------------
 
-__all__ = ('Cache', 'memcache', 'FileBackend', 'MemBackend')
+__all__ = ('Cache', 'memcache', 'FileCache')
 
 BASE_LOCK = threading.Lock()
 
@@ -191,8 +191,8 @@ class BaseCache(object):
 
     def __call__(self, func):
         if self.is_used:
-            raise RuntimeError("This cahing decorator is already used."
-                               " Create another one.")
+            raise RuntimeError("This cache decorator is already used. "
+                               "Create another one.")
 
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -235,6 +235,7 @@ class FileCache(BaseCache):
         super(FileCache, self).__init__(**kwargs)
         self.backend = FileBackend(filename)
 
+
 # ----------------- Shortcuts  --------------------------
 memcache = Cache()
 memcache.__doc__ = """
@@ -244,3 +245,4 @@ Simple cache decorator without encryption.
 """
 
 # -------------------------------------------------------
+

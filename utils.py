@@ -1,7 +1,6 @@
 import sys
 import warnings
-import hashlib
-from base64 import b64encode, b64decode
+
 from .conf import settings
 
 try:
@@ -16,45 +15,20 @@ except ImportError:
     can_encrypt = False
 
 
-PY3 = sys.version_info.major == 3 
+PY3 = sys.version_info.major == 3
 
 
 class Helpers(object):
     """Helper class that implements prebound method pattern.
     """
 
-    def _encoder_decoder(self):
-        if settings.BASE_ENCODER == 'base64' and settings.BASE_DECODER == 'base64':
-            base_encoder = b64encode
-            base_decoder = b64decode
-        elif callable(settings.BASE_ENCODER) and callable(settings.BASE_DECODER):
-            base_encoder = settings.BASE_ENCODER
-            base_decoder = settings.BASE_DECODER
-        else:
-            warnings.warn("Incorrect/Inconsistent encoder/decoder functions. Use defaults: base64.encoder, base64.decoder", UserWarning)
-            base_encoder = b64encode
-            base_decoder = b64decode
-        return base_encoder, base_decoder
-
-    @property
-    def base_encoder(self):
-        enc, _ = self._encoder_decoder()
-        return enc
-    
-    @property
-    def base_decoder(self):
-        _, dec = self._encoder_decoder()
-        return dec
-
     def encode_safely(self, data):
         """Encode the data.
         """
-        
-        encoder = self.base_encoder
-        result = settings.null
 
+        result = None
         try:
-            result = encoder(pickle.dumps(data))
+            result = settings.BASE_ENCODER(pickle.dumps(data))
         except:
             warnings.warn("Data could not be serialized.", RuntimeWarning)
         return result
@@ -63,16 +37,16 @@ class Helpers(object):
         """Inverse for the `encode_safely` function.
         """
 
-        decoder = self.base_decoder
-        result = settings.null
-
+        result = None
         try:
-            result = pickle.loads(decoder(encoded_data))
+            result = pickle.loads(settings.BASE_DECODER(encoded_data))
         except:
-            warnings.warn("Could not load and deserialize the data.", RuntimeWarning)
+            warnings.warn("Could not load and deserialize the data.",
+                          RuntimeWarning)
         return result
 
-    def get_function_hash(self, func, args=None, kwargs=None, ttl=None, key=None, noc=None):
+    def get_function_hash(self, func, args=None, kwargs=None,
+                          ttl=None, key=None, noc=None):
         """Compute the hash of the function to be evaluated.
         """
 

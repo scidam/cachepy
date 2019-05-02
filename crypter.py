@@ -7,6 +7,8 @@ from Crypto import Random
 from Crypto.Cipher import AES
 from .conf import settings
 
+__all__ = ('AESCipher',)
+
 PY3 = sys.version_info.major == 3
 
 
@@ -59,7 +61,8 @@ def unpadding(s, bs=AES.block_size):
 
 class AESCipher:
     def __init__(self, key):
-        """ 
+        """Main encryption class.
+
         Parameters
         ==========
 
@@ -71,7 +74,7 @@ class AESCipher:
             The key is internally represented as a byte-object. 
         """
 
-        self.key = to_bytes(hashlib.md5(to_bytes(key)).hexdigest())
+        self.key = to_bytes(settings.KEY_HASHER(to_bytes(key)).hexdigest())
 
     def encrypt(self, raw):
         """Encrypt a string (either a string of bytes or a regular string).
@@ -85,10 +88,10 @@ class AESCipher:
         raw = padding(raw)
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
-        return base64.b64encode(iv + cipher.encrypt(raw))
+        return settings.BASE_ENCODER(iv + cipher.encrypt(raw))
 
     def decrypt(self, enc):
-        enc = base64.b64decode(enc)
+        enc = settings.BASE_DECODER(enc)
         iv = enc[:AES.block_size]
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
         return unpadding(cipher.decrypt(enc[AES.block_size:]))

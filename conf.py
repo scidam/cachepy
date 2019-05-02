@@ -1,8 +1,9 @@
-import hashlib
-from base64 import b64decode, b64encode
+from  hashlib import sha256, md5
+from base64 import b64encode, b64decode
+
 
 __all__ = ('settings', )
- 
+
 
 class Settings:
 
@@ -11,15 +12,13 @@ class Settings:
     MIN_KEY_LENGTH = 3
 
     # ENCODER & decoder
-    BASE_ENCODER = b64encode
-    BASE_DECODER = b64decode
+    BASE_ENCODER = staticmethod(b64encode)
+    BASE_DECODER = staticmethod(b64decode)
 
     DEFAULT_ENCODING = 'utf-8'
 
-    HASH_FUNCTION = hashlib.sha256
-
-    # Null object; different from possible None returned by a function is being cached
-    null = object()
+    HASH_FUNCTION = staticmethod(sha256)
+    KEY_HASHER = staticmethod(md5)
 
 
 settings = Settings()
