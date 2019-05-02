@@ -19,8 +19,7 @@ class BaseBackend(object):
     .. note::
             - Backend is a dict-like object, that performs storing and
               retrieving data by key, e.g. backend['hash'] (e.g. `__getitem__`, `__setitem__`)
-            - It is assumed that AES enryption algorithm is used 
-              
+            - It is assumed that AES enryption algorithm is used
             - `pycryptodome` is required to enable encryption functionality
     """
 
@@ -124,35 +123,44 @@ class BaseBackend(object):
 
 
 class BaseLimitedBackend(BaseBackend):
+    """Base class to control cache size.
     """
-    cache_size = 10
-    algorithm  = 'lru', 'mru', etc.
-    counter = a dictionary that counts use of the cache.
-    """
-    def __init__(self, cache_size=settings.DEFAULT_CACHE_SIZE,
-                 algorithm=settings.DEFAULT_CACHE_ALGO):
+
+    def __init__(self, *args,  cache_size=settings.DEFAULT_CACHE_SIZE,
+                 algorithm=settings.DEFAULT_CACHE_ALGO, **kwargs):
+        """ FIXME: MOVE DOCSTRING TO CLASS HEAD
+        Parameters
+        ==========
+
+            :param cache_size: cache capacity, default value is {}.
+            :param algorithm : algorithm of removing cached data when cache is
+                               almost full; available values are `lfu` and
+                               `mfu`: stands for least frequently used and most
+                               frequently used caching algorithms; default
+                               value is {}.
+        """.format(settings.DEFAULT_CACHE_SIZE, settings.DEFAULT_CACHE_ALGO)
+
         self._counter = dict()
+        self.algorithm = algorithm
+        self.cache_size = cache_size
+        super(BaseLimitedBackend, self).__init__(*args, **kwargs)
 
-    def store_data(*args, **kwargs):
+    def store_data(self, *args, **kwargs):
         super(BaseLimitedBackend).store_data(*args, **kwargs)
-    
-    def get_data(data_key, *args, **kwargs):
+        self.control_cache_size()
+
+    def get_data(self, data_key, *args, **kwargs):
         result = super(BaseLimitedBackend).get_data(data_key, *args, **kwargs)
-        
-        if data_key in self._counter:
-            self._counter[data_key] += 1
-        else:
-            self._counter.update({data_key: 0})
-
+        self._counter.setdefault(data_key, 0).__add__(1)
         return result
-    
-    def control_cache_size(self, algorithm='lru'):
-        if algorithm == 'lru':
-            if len(self) == self.cache_size - 1:
-                for key, val in self._counter.items():
-                    #TODO: NOT YET COMPLETED!
-        elif algorithm == 'mru':
-            pass
-    
 
-
+    def control_cache_size(self):
+        if len(self) == self.cache_size - 1:
+            if self.algorithm == 'lfu':
+                to_remove = min(self._counter, key=self._counter.get)
+            elif self.algorithm == 'mfu':
+                to_remove = max(self._counter, key=self._counter.get)
+            else:
+                to_remove = min(self._counter, key=self._counter.get)
+                warnings.warn()
+            self.remove(to_remove)

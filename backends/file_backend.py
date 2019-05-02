@@ -1,9 +1,9 @@
 import shelve
-from .memory_backend import MemBackend
+from .memory_backend import MemBackend, LimitedMemBackend, BaseLimitedBackend
 
 
 class FileBackend(shelve.Shelf, MemBackend):
-    """Used to store the cached data in a file.
+    """File-based cache backend.
     """
 
     def __init__(self, filename):
@@ -18,3 +18,8 @@ class FileBackend(shelve.Shelf, MemBackend):
         super(FileBackend, self).store_data(data_key, data, key=key, ttl=ttl,
                                             noc=noc, ncalls=ncalls)
         self.sync()
+
+
+class LimitedFileBackend(LimitedMemBackend, FileBackend):
+    """File-based cache backend with limited capacity.
+    """ + BaseLimitedBackend.__init__.__doc__

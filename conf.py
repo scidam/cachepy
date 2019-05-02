@@ -21,8 +21,8 @@ class Settings:
     KEY_HASHER = staticmethod(md5)
 
     # For limited caches only
-    DEFAULT_CACHE_CAPACITY = 20
-    DEFAULT_CACHE_ALGO = 'lru'
+    DEFAULT_CACHE_SIZE = 20
+    DEFAULT_CACHE_ALGO = 'lfu'
 
 
 settings = Settings()
