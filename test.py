@@ -282,10 +282,12 @@ class ChangingSettingsOnTheFly(unittest.TestCase):
         self.old_decoder = self.settings.BASE_DECODER
 
     def test_switching_settings(self):
-        self.backend.store_data('hash_value', 'sample text to be stored')
+        self.backend.store_data('hash_value', 'sample text')
         self.settings.BASE_DECODER = staticmethod(base64.b16decode)
-        with self.assertRaises(RuntimeWarning):
+        with self.assertRaises(BaseException):
             val, fl = self.backend.get_data('hash_value')
+        self.settings.BASE_DECODER = self.old_decoder
+        self.assertEqual(self.backend.get_data('hash_value')[0], 'sample text')
 
     def tearDown(self):
         self.settings.BASE_DECODER = self.old_decoder

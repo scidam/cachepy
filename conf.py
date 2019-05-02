@@ -1,4 +1,4 @@
-from  hashlib import sha256, md5
+from hashlib import sha256, md5
 from base64 import b64encode, b64decode
 
 
@@ -19,6 +19,10 @@ class Settings:
 
     HASH_FUNCTION = staticmethod(sha256)
     KEY_HASHER = staticmethod(md5)
+
+    # For limited caches only
+    DEFAULT_CACHE_CAPACITY = 20
+    DEFAULT_CACHE_ALGO = 'lru'
 
 
 settings = Settings()

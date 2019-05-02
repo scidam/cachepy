@@ -194,24 +194,32 @@ class BaseCache(object):
             raise RuntimeError("This cache decorator is already used. "
                                "Create another one.")
 
+        self.cached_keys = list()
+
         @wraps(func)
         def wrapper(*args, **kwargs):
-            self.data_key = get_function_hash(func, args, kwargs,
+            data_key = get_function_hash(func, args, kwargs,
                                               self.ttl, self.key, self.noc)
+
+            if data_key not in self.cached_keys:
+                self.cached_keys.append(data_key)
+
             with BASE_LOCK:
-                result, flag = self.backend.get_data(self.data_key,
+                result, flag = self.backend.get_data(data_key,
                                                      key=self.key)
             if not flag:
                 result = func(*args, **kwargs)
                 with BASE_LOCK:
-                    self.backend.store_data(self.data_key, result,
+                    self.backend.store_data(data_key, result,
                                             key=self.key, ttl=self.ttl,
                                             noc=self.noc, ncalls=0)
             return result
 
         def clear():
+            """Clear cache for specified funcion"""
             with BASE_LOCK:
-                self.backend.remove(self.data_key)
+                for data_key in self.cached_keys:
+                    self.backend.remove(data_key)
 
         wrapper.clear = clear
         self.is_used = True

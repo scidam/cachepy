@@ -18,9 +18,10 @@ class BaseBackend(object):
 
     .. note::
             - Backend is a dict-like object, that performs storing and
-              retrieving data via backend['chash'] (e.g. `__getitem__`, `__setitem__`)
-            - It is assumed that AES enryption algorithm is used #TODO: Update docstring!
-              (`pycrypto` required to enable encryption functionality)
+              retrieving data by key, e.g. backend['hash'] (e.g. `__getitem__`, `__setitem__`)
+            - It is assumed that AES enryption algorithm is used 
+              
+            - `pycryptodome` is required to enable encryption functionality
     """
 
     def _to_bytes(self, data, key='', expired=None, noc=0, ncalls=0):
@@ -29,12 +30,11 @@ class BaseBackend(object):
         **Parameters**
 
             :param data: any python serializable (pickable) object
-            :param key: If the key is provided and `pycrypto` is installed, cached
-                        data will be encrypted (If `pycrypto` is not installed, this #TODO: pycrypto or something else?!
-                        parameter will be ignored). Empty string by default.
-            :param expired: exact date when the cache will be expired; It is `None` by default
-            :param noc: the number of allowed calls; TODO: Clarify what does it mean, exactly?!!!!
-            :param ncalls: What is it; I don't understand!!! TODO: clarify this!!!!
+            :param key: If the key is provided and `pycryptodome` is installed, cached
+                        data will be encrypted. Empty string by default.
+            :param expired: exact date when the cache will be expired; `None` by default
+            :param noc: the number of allowed calls;
+            :param ncalls: internal counter of calls;
             :type key: str
             :type expired: `datetime` or `None`
             :type noc: int
@@ -64,14 +64,6 @@ class BaseBackend(object):
     def _from_bytes(self, byte_data, key=''):
         """Deserialize (and decrypt if key is provided) cached
         data stored in the byte_data (bytes object).
-
-        # TODO: Full description of the method needed
-
-        :param sdata: a string
-        :param key: if provided (e.g. non-empty string), it
-                    will be used to decrypt `sdata` as a password
-        :type key: str, default is empty string
-        :returns: a python object
         """
 
         if not can_encrypt and key:
@@ -129,3 +121,38 @@ class BaseBackend(object):
                 flag = False
 
         return (data, flag) if flag else (None, flag)
+
+
+class BaseLimitedBackend(BaseBackend):
+    """
+    cache_size = 10
+    algorithm  = 'lru', 'mru', etc.
+    counter = a dictionary that counts use of the cache.
+    """
+    def __init__(self, cache_size=settings.DEFAULT_CACHE_SIZE,
+                 algorithm=settings.DEFAULT_CACHE_ALGO):
+        self._counter = dict()
+
+    def store_data(*args, **kwargs):
+        super(BaseLimitedBackend).store_data(*args, **kwargs)
+    
+    def get_data(data_key, *args, **kwargs):
+        result = super(BaseLimitedBackend).get_data(data_key, *args, **kwargs)
+        
+        if data_key in self._counter:
+            self._counter[data_key] += 1
+        else:
+            self._counter.update({data_key: 0})
+
+        return result
+    
+    def control_cache_size(self, algorithm='lru'):
+        if algorithm == 'lru':
+            if len(self) == self.cache_size - 1:
+                for key, val in self._counter.items():
+                    #TODO: NOT YET COMPLETED!
+        elif algorithm == 'mru':
+            pass
+    
+
+
