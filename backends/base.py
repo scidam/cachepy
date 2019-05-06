@@ -124,43 +124,41 @@ class BaseBackend(object):
 
 class BaseLimitedBackend(BaseBackend):
     """Base class to control cache size.
-    """
 
-    def __init__(self, *args,  cache_size=settings.DEFAULT_CACHE_SIZE,
-                 algorithm=settings.DEFAULT_CACHE_ALGO, **kwargs):
-        """ FIXME: MOVE DOCSTRING TO CLASS HEAD
-        Parameters
-        ==========
+    Parameters
+    ==========
 
-            :param cache_size: cache capacity, default value is {}.
-            :param algorithm : algorithm of removing cached data when cache is
-                               almost full; available values are `lfu` and
-                               `mfu`: stands for least frequently used and most
-                               frequently used caching algorithms; default
-                               value is {}.
-        """.format(settings.DEFAULT_CACHE_SIZE, settings.DEFAULT_CACHE_ALGO)
+        :param cache_size: cache capacity, default value is {}.
+        :param algorithm : cache clearing algorithm; the cache cleared when
+                           it is almost full; available values are `lfu` and
+                           `mfu`: stands for least frequently used and most
+                           frequently used caching algorithms respectively; 
+                           default value is {}.
+    """.format(settings.DEFAULT_CACHE_SIZE, settings.DEFAULT_CACHE_ALGO)
 
+    def __init__(self, *args, **kwargs):
         self._counter = dict()
-        self.algorithm = algorithm
-        self.cache_size = cache_size
+        self.algorithm = kwargs.get('algorithm', settings.DEFAULT_CACHE_ALGO)
+        self.cache_size = kwargs.get('cache_size', settings.DEFAULT_CACHE_SIZE)
         super(BaseLimitedBackend, self).__init__(*args, **kwargs)
 
-    def store_data(self, *args, **kwargs):
-        super(BaseLimitedBackend).store_data(*args, **kwargs)
+    def store_data(self, data_key, *args, **kwargs):
         self.control_cache_size()
+        super(BaseLimitedBackend, self).store_data(data_key, *args, **kwargs)
+        self._counter.setdefault(data_key, 0)
 
     def get_data(self, data_key, *args, **kwargs):
-        result = super(BaseLimitedBackend).get_data(data_key, *args, **kwargs)
-        self._counter.setdefault(data_key, 0).__add__(1)
+        result = super(BaseLimitedBackend, self).get_data(data_key, *args, **kwargs)
+        if result[-1]:
+            self._counter[data_key] += 1
         return result
 
     def control_cache_size(self):
-        if len(self) == self.cache_size - 1:
-            if self.algorithm == 'lfu':
-                to_remove = min(self._counter, key=self._counter.get)
-            elif self.algorithm == 'mfu':
+        if len(self) >= self.cache_size:
+            if self.algorithm == 'mfu':
                 to_remove = max(self._counter, key=self._counter.get)
             else:
                 to_remove = min(self._counter, key=self._counter.get)
-                warnings.warn()
             self.remove(to_remove)
+            self._counter.pop(to_remove)
+ 

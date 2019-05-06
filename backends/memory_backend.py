@@ -21,8 +21,9 @@ class MemBackend(UserDict, BaseBackend):
                                            expired=expired, noc=noc,
                                            ncalls=ncalls)
 
-print("HEY: ", BaseLimitedBackend.__doc__)
 
 class LimitedMemBackend(BaseLimitedBackend, MemBackend):
     """Memory cache backend with limited capacity.
-    """ + BaseLimitedBackend.__init__.__doc__
+
+    See details in `BaseLimitedBackend`.
+    """

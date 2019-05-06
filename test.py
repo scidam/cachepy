@@ -2,13 +2,18 @@ import hashlib
 import time
 import unittest
 import base64
+import tempfile
+import os
+
 
 from .utils import get_function_hash, PY3, can_encrypt
 
 if can_encrypt:
     from .utils import AESCipher
 
-from . import FileBackend, MemBackend, Cache
+from . import (FileBackend, MemBackend, Cache, FileCache,
+               LimitedFileCache, LimitedMemCache,
+               LimitedMemBackend, LimitedFileBackend)
 from .conf import settings
 
 DEFAULT_ENCODING = settings.DEFAULT_ENCODING
@@ -22,6 +27,11 @@ try:
     import numpy as np
 except ImportError:
     np = None
+
+
+TEMP_FILENAME = next(tempfile._get_candidate_names())
+while os.path.exists(TEMP_FILENAME):
+    TEMP_FILENAME = next(tempfile._get_candidate_names())
 
 
 # ------------------- Simple functions to be cached --------------
@@ -163,7 +173,7 @@ class BaseCacheToMemTests(unittest.TestCase):
     def test_two_functions_same_decorator(self):
         simple = self.decorator(function_to_cache)
         with self.assertRaises(RuntimeError):
-            # The `simple` decorator is already used, exception should be raised here.
+            # if the `simple` decorator is already used, exception should be raised here.
             simple1 = self.decorator(function_returns_none)
 
     def test_function_returns_none(self):
@@ -208,10 +218,10 @@ class BaseCacheToMemTests(unittest.TestCase):
     @unittest.skipIf(not np, "Skipped: Numpy is not installed.")
     def test_function_returns_np_ttl(self):
         npfun = self.decorator_key_ttl_noc(function_returns_random_numpy)
-        res = npfun(2)
-        res1 = npfun(2)
+        res = npfun(3)
+        res1 = npfun(3)
         time.sleep(2)
-        res2 = npfun(2)
+        res2 = npfun(3)
         np.testing.assert_array_equal(res, res1)
         self.assertFalse((res == res2).all())
 
@@ -221,17 +231,22 @@ class BaseCacheToFileTests(BaseCacheToMemTests):
     def clear_storage(self):
         import os
         try:
-            os.remove('testfilecache.dat')
+            os.remove(TEMP_FILENAME + '.dat')
+            os.remove(TEMP_FILENAME + '.bak')
+            os.remove(TEMP_FILENAME + '.dir')
         except (IOError, OSError):
             pass
 
     def setUp(self):
-        self.decorator = Cache('testfilecache.dat')
-        self.decorator_key = Cache('testfilecache.dat', key='a')
-        self.decorator_key_ttl_noc = Cache('testfilecache.dat', key='a',
-                                           ttl=1, noc=2)
+        self.decorator = FileCache(TEMP_FILENAME)
+        self.decorator_key = FileCache(TEMP_FILENAME, key='a')
+        self.decorator_key_ttl_noc = FileCache(TEMP_FILENAME, key='a',
+                                               ttl=1, noc=2)
 
     def tearDown(self):
+        self.decorator.backend.close()
+        self.decorator_key.backend.close()
+        self.decorator_key_ttl_noc.backend.close()
         self.clear_storage()
 
 
@@ -298,21 +313,21 @@ class FileBackendTests(MemBackendTests):
     def clear_storage(self):
         import os
         try:
-            os.remove('testfilecache.dat')
+            os.remove(TEMP_FILENAME + '.dat')
+            os.remove(TEMP_FILENAME + '.bak')
+            os.remove(TEMP_FILENAME + '.dir')
         except (OSError, IOError):
             pass
 
     def setUp(self):
         self.clear_storage()
-        self.backend = FileBackend('testfilecache.dat')
+        self.backend = FileBackend(TEMP_FILENAME)
         myhash = hashlib.md5('myhash'.encode(DEFAULT_ENCODING)).hexdigest()
-        myhash += hashlib.md5(myhash.encode(DEFAULT_ENCODING)).hexdigest()
         self.myhash = myhash
 
     def tearDown(self):
+        self.backend.close()
         self.clear_storage()
-    
-    # TODO:  Some test should be written!!!
 
 
 @unittest.skipIf(not can_encrypt, "Skipped: Pycan_encrypt is not installed.")
@@ -342,6 +357,79 @@ class CrypterTests(unittest.TestCase):
 
     def test_empty_encrypt(self):
         self.assertEqual(self.cipher.decrypt(self.cipher.encrypt(b'')), b'')
+
+
+class LimitedMemBackendTests(unittest.TestCase):
+
+    def setUp(self):
+        self.backend_lfu = LimitedMemBackend(cache_size=3, algorithm='lfu')
+        self.backend_mfu = LimitedMemBackend(cache_size=3, algorithm='mfu')
+
+    def test_store_to_mem_limited_lfu(self):
+        self.backend_lfu.store_data('hash1', 'sample text1')
+        self.backend_lfu.store_data('hash2', 'sample text2')
+        self.backend_lfu.get_data('hash2')
+        self.backend_lfu.store_data('hash3', 'sample text3')
+        self.backend_lfu.get_data('hash3')
+        self.backend_lfu.store_data('hash4', 'sample text4')
+        self.assertNotIn('hash1', self.backend_lfu.keys())
+
+    def test_store_to_mem_limited_mfu(self):
+        self.backend_mfu.store_data('hash1', 'sample text1')
+        self.backend_mfu.store_data('hash2', 'sample text2')
+        self.backend_mfu.get_data('hash2')
+        self.backend_mfu.get_data('hash2')
+        self.backend_mfu.store_data('hash3', 'sample text3')
+        self.assertNotIn('hash2', self.backend_lfu.keys())
+
+    def test_store_to_mem_limited_overflow(self):
+        for j in range(5):
+            self.backend_mfu.store_data('hash' + str(j), 'data' + str(j))
+        self.assertEqual(len(self.backend_mfu.keys()), 3)
+
+
+class LimitedFileBackenTests(LimitedMemBackendTests):
+    def setUp(self):
+        self.backend_lfu = LimitedFileBackend(TEMP_FILENAME, cache_size=3, algorithm='lfu')
+        self.backend_mfu = LimitedFileBackend(TEMP_FILENAME, cache_size=3, algorithm='mfu')
+
+    def tearDown(self):
+        self.backend_lfu.close()
+        self.backend_mfu.close()
+        FileBackendTests.clear_storage(self)
+
+
+class LimitedCacheToMemTests(BaseCacheToMemTests):
+
+    def setUp(self):
+        self.decorator = LimitedMemCache(cache_size=2)
+        self.decorator_key = LimitedMemCache(key='a', cache_size=10)
+        self.decorator_key_ttl_noc = LimitedMemCache(key='a', ttl=1, noc=2, cache_size=10)
+
+    def test_cache_with_limited_capacity(self):
+        simple = self.decorator(function_with_pars)
+        simple(1)
+        simple(2)
+        simple(3)  # one element should be dropped out
+        self.assertEqual(len(self.decorator.backend.keys()), 2)
+
+    def test_cache_with_limited_capacity_and_encryption(self):
+        print("Current capacity is ", self.decorator_key.backend.keys())
+        simple = self.decorator_key(function_with_pars)
+        simple(1)
+        print("Current capacity is (1)", self.decorator_key.backend.keys())
+        simple(2)
+        print("Current capacity is (2)", self.decorator_key.backend.keys())
+        simple(3)
+        print("Current capacity is (3)", self.decorator_key.backend.keys())
+        self.assertEqual(len(self.decorator_key.backend.keys()), 2)
+
+    # def test_cache_with_limited_capacity_and_ttl_noc(self):
+    #     simple = self.decorator_key_ttl_noc(function_with_pars)
+    #     simple(1)
+    #     simple(2)
+    #     simple(3)
+    #     self.assertEqual(len(self.decorator_key_ttl_noc.backend.keys()), 2)
 
 
 if __name__ == '__main__':

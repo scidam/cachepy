@@ -1,7 +1,5 @@
-import base64
 import random
 import string
-import hashlib
 import sys
 from Crypto import Random
 from Crypto.Cipher import AES

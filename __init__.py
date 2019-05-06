@@ -160,7 +160,8 @@ Log list
 '''
 
 import threading
-from .backends import (FileBackend, MemBackend)
+from .backends import (FileBackend, MemBackend, LimitedFileBackend,
+                       LimitedMemBackend)
 from .utils import get_function_hash, PY3
 from functools import wraps
 
@@ -173,7 +174,8 @@ __maintainer__ = "Dmitry E. Kislov"
 __email__ = "kislov@easydan.com"
 # ----------------------------------------------------------
 
-__all__ = ('Cache', 'memcache', 'FileCache')
+__all__ = ('Cache', 'memcache', 'FileCache', 'LimitedFileCache',
+           'LimitedMemCache')
 
 BASE_LOCK = threading.Lock()
 
@@ -182,7 +184,7 @@ class BaseCache(object):
     """Base class for cache decorator.
     """
 
-    def __init__(self, backend=None, key='', ttl=0, noc=0):
+    def __init__(self, backend=None, key='', ttl=0, noc=0, **kwargs):
         self.backend = backend
         self.ttl = ttl
         self.key = key
@@ -226,9 +228,23 @@ class BaseCache(object):
         return wrapper
 
 
+_parameters_desription = """
+    Parameters
+    ==========
+
+        {}
+        :param ttl: cache time to live in seconds;
+        :param key: encryption key; empty by default; if provided,
+                    the cached data will be encrypted.
+        :param noc: number of the function calls; 
+                    if it is reached, the cache is cleared.
+"""
+
+
 class Cache(BaseCache):
     """Cache results of function execution in memory.
-    """
+
+    """ + _parameters_desription.format('')
 
     def __init__(self, *args, **kwargs):
         super(Cache, self).__init__(*args, **kwargs)
@@ -236,12 +252,47 @@ class Cache(BaseCache):
 
 
 class FileCache(BaseCache):
-    """Caches the result of a function execution in memory.
-    """
+    """Caches results of function execution in a file.
+    """ + _parameters_desription.format("""
+:param filename: name of a file, where the cached data will be stored;
+""")
 
-    def __init__(self, filename, **kwargs):
-        super(FileCache, self).__init__(**kwargs)
+    def __init__(self, filename, *args,  **kwargs):
+        super(FileCache, self).__init__(*args, **kwargs)
         self.backend = FileBackend(filename)
+
+
+class LimitedMemCache(BaseCache):
+    """Caches the result of a function execution in memory.
+    Uses cache of limited capacity.
+
+    """ + _parameters_desription.format("""
+:param cache_size: cache capacity; an integer number; if it is exeeded,\
+                   cached data is removed according to the algorithm\
+                   (either 'lfu' or 'mfu');
+:param algorithm: strategy of removing cached data; either `lfu`\
+                  (least frequently used) or `mfu` (most frequently used)\
+                  cached value is removed when cache is exhausted.
+""")
+    def __init__(self, *args, **kwargs):
+        super(LimitedMemCache, self).__init__(*args, **kwargs)
+        self.backend = LimitedMemBackend(**kwargs)
+
+
+class LimitedFileCache(BaseCache):
+    """Caches results of function execution in a file.
+    """ + _parameters_desription.format("""
+:param cache_size: cache capacity; an integer number; if it is exeeded,\
+                   cached data is removed according to the algorithm\
+                   (either 'lfu' or 'mfu');
+:param algorithm: strategy of removing cached data; either `lfu`\
+                  (least frequently used) or `mfu` (most frequently used)\
+                  cached value is removed when cache is exhausted.
+""")
+
+    def __init__(self, filename, *args, **kwargs):
+        super(LimitedFileCache, self).__init__(*args, **kwargs)
+        self.backend = LimitedFileBackend(filename, **kwargs)
 
 
 # ----------------- Shortcuts  --------------------------
@@ -253,4 +304,3 @@ Simple cache decorator without encryption.
 """
 
 # -------------------------------------------------------
-
