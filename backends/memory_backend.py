@@ -19,7 +19,6 @@ class MemBackend(UserDict, BaseBackend):
         super(MemBackend, self).__init__()
 
 
-
 class LimitedMemBackend(BaseLimitedBackend, MemBackend):
     """Memory cache backend with limited capacity.
 

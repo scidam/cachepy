@@ -14,16 +14,14 @@ class FileBackend(BaseBackend):
     """File-based cache backend.
     """
 
-    def __init__(self, filename, *args, **kwargs):
-        _fn = kwargs.pop('filename', None)
-        self.filename = filename or _fn
+    def __init__(self, filename, **kwargs):
+        self.filename = filename
         if not isinstance(self.filename, basestring):
             raise TypeError("Filename should be a string. ")
         if os.path.exists(self.filename):
             warnings.warn("The file already exists. "
                           "Its content will be overwritten.")
         self.db = shelve.open(self.filename, flag='c', writeback=True)
-        super(FileBackend, self).__init__()
 
     def keys(self):
         return tuple(self.db.keys())
