@@ -75,6 +75,10 @@ class BaseBackend(object):
         return result
 
     def store_data(self, data_key, data, key, expired, noc, ncalls):
+        if ttl:
+            expired = datetime.datetime.now() + datetime.timedelta(seconds=ttl)
+        else:
+            expired = None
         self[data_key] = self._to_bytes(data, key=key, expired=expired,
                                         noc=noc, ncalls=ncalls)
 
@@ -143,6 +147,7 @@ class BaseLimitedBackend(BaseBackend):
         super(BaseLimitedBackend, self).__init__(*args, **kwargs)
 
     def store_data(self, data_key, *args, **kwargs):
+        print("I Limitedbackend store data!")
         self.control_cache_size()
         super(BaseLimitedBackend, self).store_data(data_key, *args, **kwargs)
         self._counter.setdefault(data_key, 0)
@@ -161,4 +166,3 @@ class BaseLimitedBackend(BaseBackend):
                 to_remove = min(self._counter, key=self._counter.get)
             self.remove(to_remove)
             self._counter.pop(to_remove)
- 

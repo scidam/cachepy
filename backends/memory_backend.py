@@ -12,6 +12,12 @@ class MemBackend(UserDict, BaseBackend):
     """Store cached data in memory.
     """
 
+    def __init__(self, *args, key='', ttl=0, noc=0):
+        self.key = key
+        self.ttl = ttl
+        self.noc = noc
+        super(MemBackend, self).__init__()
+
     def store_data(self, data_key, data, key='', ttl=0, noc=0, ncalls=0):
         if ttl:
             expired = datetime.datetime.now() + datetime.timedelta(seconds=ttl)

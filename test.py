@@ -417,19 +417,19 @@ class LimitedCacheToMemTests(BaseCacheToMemTests):
         print("Current capacity is ", self.decorator_key.backend.keys())
         simple = self.decorator_key(function_with_pars)
         simple(1)
-        print("Current capacity is (1)", self.decorator_key.backend.keys())
-        simple(2)
+        self.assertEqual(len(self.decorator_key.backend), 1)
+        simple(4)
+        self.assertEqual(len(self.decorator_key.backend), 2)
+        simple(3)  # adding this item should lead to dropping an item.
         print("Current capacity is (2)", self.decorator_key.backend.keys())
-        simple(3)
-        print("Current capacity is (3)", self.decorator_key.backend.keys())
         self.assertEqual(len(self.decorator_key.backend.keys()), 2)
 
-    # def test_cache_with_limited_capacity_and_ttl_noc(self):
-    #     simple = self.decorator_key_ttl_noc(function_with_pars)
-    #     simple(1)
-    #     simple(2)
-    #     simple(3)
-    #     self.assertEqual(len(self.decorator_key_ttl_noc.backend.keys()), 2)
+    def test_cache_with_limited_capacity_and_ttl_noc(self):
+        simple = self.decorator_key_ttl_noc(function_with_pars)
+        simple(1)
+        simple(2)
+        simple(3)
+        self.assertEqual(len(self.decorator_key_ttl_noc.backend.keys()), 2)
 
 
 if __name__ == '__main__':
