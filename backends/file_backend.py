@@ -9,14 +9,16 @@ class FileBackend(shelve.Shelf, MemBackend):
     """
 
     def __init__(self, filename, **kwargs):
-        self.filename = filename
+        _fn = kwargs.pop('filename', None)
+        self.filename = filename or _fn
         try:
             import anydbm
         except ImportError:
             import dbm as anydbm
         if os.path.exists(self.filename):
-            warnings.warn()  # FIXME: Warning message should be added !!!
-        shelve.Shelf.__init__(self, anydbm.open(self.filename, flag='c'))
+            warnings.warn()  # FIXME: Warning message should be added !!!  # file will be overwritten! message should be raised!
+        # shelve.Shelf
+        super(FileBackend, self).__init__(anydbm.open(self.filename, flag='c'))
 
     def store_data(self, data_key, data, key='', ttl=0, noc=0, ncalls=0):
         super(FileBackend, self).store_data(data_key, data, key=key, ttl=ttl,

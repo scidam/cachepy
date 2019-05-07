@@ -138,8 +138,8 @@ class BaseLimitedBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
         self._counter = dict()
-        self.algorithm = kwargs.get('algorithm', settings.DEFAULT_CACHE_ALGO)
-        self.cache_size = kwargs.get('cache_size', settings.DEFAULT_CACHE_SIZE)
+        self.algorithm = kwargs.pop('algorithm', settings.DEFAULT_CACHE_ALGO)
+        self.cache_size = kwargs.pop('cache_size', settings.DEFAULT_CACHE_SIZE)
         super(BaseLimitedBackend, self).__init__(*args, **kwargs)
 
     def store_data(self, data_key, *args, **kwargs):
