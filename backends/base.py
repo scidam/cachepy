@@ -74,7 +74,7 @@ class BaseBackend(object):
             result = decode_safely(byte_data)
         return result
 
-    def store_data(self, data_key, data, key, expired, noc, ncalls):
+    def store_data(self, data_key, data, key='', ttl=0, noc=0, ncalls=0):
         if ttl:
             expired = datetime.datetime.now() + datetime.timedelta(seconds=ttl)
         else:
@@ -147,7 +147,6 @@ class BaseLimitedBackend(BaseBackend):
         super(BaseLimitedBackend, self).__init__(*args, **kwargs)
 
     def store_data(self, data_key, *args, **kwargs):
-        print("I Limitedbackend store data!")
         self.control_cache_size()
         super(BaseLimitedBackend, self).store_data(data_key, *args, **kwargs)
         self._counter.setdefault(data_key, 0)
@@ -160,9 +159,21 @@ class BaseLimitedBackend(BaseBackend):
 
     def control_cache_size(self):
         if len(self) >= self.cache_size:
-            if self.algorithm == 'mfu':
-                to_remove = max(self._counter, key=self._counter.get)
+            to_remove = None
+            if self._counter:
+                if self.algorithm == 'mfu':
+                    to_remove = max(self._counter, key=self._counter.get)
+                else:
+                    to_remove = min(self._counter, key=self._counter.get)
+            if to_remove is None:
+                if hasattr(self, 'popitem'):
+                    try:
+                        self.popitem()
+                    except KeyError:
+                        pass
+                else:
+                    raise RuntimeError("Cache is exhausted. No methods "
+                                       "were found to clear cached item.")
             else:
-                to_remove = min(self._counter, key=self._counter.get)
-            self.remove(to_remove)
-            self._counter.pop(to_remove)
+                self.remove(to_remove)
+                self._counter.pop(to_remove)

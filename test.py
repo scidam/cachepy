@@ -403,8 +403,8 @@ class LimitedCacheToMemTests(BaseCacheToMemTests):
 
     def setUp(self):
         self.decorator = LimitedMemCache(cache_size=2)
-        self.decorator_key = LimitedMemCache(key='a', cache_size=10)
-        self.decorator_key_ttl_noc = LimitedMemCache(key='a', ttl=1, noc=2, cache_size=10)
+        self.decorator_key = LimitedMemCache(key='a', cache_size=2)
+        self.decorator_key_ttl_noc = LimitedMemCache(key='a', ttl=1, noc=2, cache_size=2)
 
     def test_cache_with_limited_capacity(self):
         simple = self.decorator(function_with_pars)
@@ -414,14 +414,12 @@ class LimitedCacheToMemTests(BaseCacheToMemTests):
         self.assertEqual(len(self.decorator.backend.keys()), 2)
 
     def test_cache_with_limited_capacity_and_encryption(self):
-        print("Current capacity is ", self.decorator_key.backend.keys())
         simple = self.decorator_key(function_with_pars)
         simple(1)
         self.assertEqual(len(self.decorator_key.backend), 1)
         simple(4)
         self.assertEqual(len(self.decorator_key.backend), 2)
         simple(3)  # adding this item should lead to dropping an item.
-        print("Current capacity is (2)", self.decorator_key.backend.keys())
         self.assertEqual(len(self.decorator_key.backend.keys()), 2)
 
     def test_cache_with_limited_capacity_and_ttl_noc(self):
@@ -430,6 +428,21 @@ class LimitedCacheToMemTests(BaseCacheToMemTests):
         simple(2)
         simple(3)
         self.assertEqual(len(self.decorator_key_ttl_noc.backend.keys()), 2)
+
+
+
+class LimitedCacheToFileTests(LimitedCacheToMemTests):
+
+    def setUp(self):
+        self.decorator = LimitedFileCache(TEMP_FILENAME, cache_size=2)
+        self.decorator_key = LimitedFileCache(TEMP_FILENAME, key='a', cache_size=2)
+        self.decorator_key_ttl_noc = LimitedFileCache(TEMP_FILENAME, key='a', ttl=1, noc=2, cache_size=2)
+
+    def tearDown(self):
+        self.decorator.backend.close()
+        self.decorator_key.backend.close()
+        self.decorator_key_ttl_noc.backend.close()
+        BaseCacheToFileTests.clear_storage(self)
 
 
 if __name__ == '__main__':
