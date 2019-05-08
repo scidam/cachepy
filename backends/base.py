@@ -82,14 +82,17 @@ class BaseBackend(object):
         self[data_key] = self._to_bytes(data, key=key, expired=expired,
                                         noc=noc, ncalls=ncalls)
 
-    def get(self, name='', default=None):
+    def get(self, key='', default=None):
         raise NotImplementedError
 
-    def remove(self, name):
+    def popitem(self, key=None):
+        raise NotImplementedError
+
+    def remove(self, key):
         if not hasattr(self, '__contains__'):
             raise NotImplementedError
-        if name in self:
-            del self[name]
+        if key in self:
+            del self[key]
 
     def get_data(self, data_key, key=''):
         """Get the data from the cache.

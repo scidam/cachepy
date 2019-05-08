@@ -12,7 +12,7 @@ if can_encrypt:
     from .utils import AESCipher
 
 from . import (FileBackend, MemBackend, Cache, FileCache,
-               LimitedFileCache, LimitedMemCache,
+               LimitedFileCache, LimitedCache,
                LimitedMemBackend, LimitedFileBackend)
 from .conf import settings
 
@@ -73,10 +73,10 @@ class BaseCacheHasherTests(unittest.TestCase):
         return ss
 
     def setUp(self):
-        self.mycache = Cache(None)
-        self.mycache_ttl = Cache(None, ttl=5)
-        self.mycache_key = Cache(None, key='nothing')
-        self.mycache_key_ttl = Cache(None, ttl=5, key='nothing')
+        self.mycache = Cache()
+        self.mycache_ttl = Cache(ttl=5)
+        self.mycache_key = Cache(key='nothing')
+        self.mycache_key_ttl = Cache(ttl=5, key='nothing')
 
     def test_get_function_hash_simple(self):
         computed = get_function_hash(function_to_cache, args=([], 0, ''))
@@ -208,12 +208,12 @@ class BaseCacheToMemTests(unittest.TestCase):
     @unittest.skipIf(not np, "Skipped: Numpy is not installed.")
     def test_function_returns_np_noc(self):
         npfun = self.decorator_key_ttl_noc(function_returns_random_numpy)
-        res = npfun(2) # compute the value
-        res1 = npfun(2) # get the value from cache
-        npfun(2) # get the value from cache
-        res2 = npfun(2) # recompute the value
+        res = npfun(2)  # compute the value
+        res1 = npfun(2)  # get the value from cache
+        npfun(2)  # get the value from cache
+        res2 = npfun(2)  # recompute the value
         np.testing.assert_array_equal(res, res1)
-        self.assertFalse((res == res2).all())
+        self.assertFalse(np.isclose(res, res2).all())
 
     @unittest.skipIf(not np, "Skipped: Numpy is not installed.")
     def test_function_returns_np_ttl(self):
@@ -223,7 +223,7 @@ class BaseCacheToMemTests(unittest.TestCase):
         time.sleep(2)
         res2 = npfun(3)
         np.testing.assert_array_equal(res, res1)
-        self.assertFalse((res == res2).all())
+        self.assertFalse(np.isclose(res, res2).all())
 
 
 class BaseCacheToFileTests(BaseCacheToMemTests):
@@ -402,9 +402,9 @@ class LimitedFileBackenTests(LimitedMemBackendTests):
 class LimitedCacheToMemTests(BaseCacheToMemTests):
 
     def setUp(self):
-        self.decorator = LimitedMemCache(cache_size=2)
-        self.decorator_key = LimitedMemCache(key='a', cache_size=2)
-        self.decorator_key_ttl_noc = LimitedMemCache(key='a', ttl=1, noc=2, cache_size=2)
+        self.decorator = LimitedCache(cache_size=2)
+        self.decorator_key = LimitedCache(key='a', cache_size=2)
+        self.decorator_key_ttl_noc = LimitedCache(key='a', ttl=1, noc=2, cache_size=2)
 
     def test_cache_with_limited_capacity(self):
         simple = self.decorator(function_with_pars)

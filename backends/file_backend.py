@@ -26,22 +26,22 @@ class FileBackend(BaseBackend):
     def keys(self):
         return tuple(self.db.keys())
 
-    def remove(self, item):
-        if item in self.db:
-            del self.db[item]
+    def remove(self, key):
+        if key in self.db:
+            del self.db[key]
 
     def store_data(self, *args, **kwargs):
         super(FileBackend, self).store_data(*args, **kwargs)
         self.db.sync()
 
     def get(self, key, default=None):
-        return self.db.get(key, default)
+        return self.db.get(key, default=default)
 
     def __setitem__(self, key, value):
         self.db[key] = value
 
-    def popitem(self):
-        self.db.popitem()
+    def popitem(self, key=None):
+        self.db.popitem()  # just remove an arbitrary (k, v) pair
 
     def __getitem__(self, key):
         return self.get(key)
