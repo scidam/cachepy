@@ -228,7 +228,8 @@ class BaseCacheToMemTests(unittest.TestCase):
 
 class BaseCacheToFileTests(BaseCacheToMemTests):
 
-    def clear_storage(self):
+    @staticmethod
+    def clear_storage():
         import os
         try:
             os.remove(TEMP_FILENAME + '.dat')
@@ -310,7 +311,8 @@ class ChangingSettingsOnTheFly(unittest.TestCase):
 
 class FileBackendTests(MemBackendTests):
 
-    def clear_storage(self):
+    @staticmethod
+    def clear_storage():
         import os
         try:
             os.remove(TEMP_FILENAME + '.dat')
@@ -396,7 +398,7 @@ class LimitedFileBackenTests(LimitedMemBackendTests):
     def tearDown(self):
         self.backend_lfu.close()
         self.backend_mfu.close()
-        FileBackendTests.clear_storage(self)
+        FileBackendTests.clear_storage()
 
 
 class LimitedCacheToMemTests(BaseCacheToMemTests):
@@ -442,7 +444,7 @@ class LimitedCacheToFileTests(LimitedCacheToMemTests):
         self.decorator.backend.close()
         self.decorator_key.backend.close()
         self.decorator_key_ttl_noc.backend.close()
-        BaseCacheToFileTests.clear_storage(self)
+        BaseCacheToFileTests.clear_storage()
 
 
 if __name__ == '__main__':
