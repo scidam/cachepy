@@ -291,27 +291,45 @@ _class_extra_parameters = {'Cache': '',
 # --------------------------------------------------------------------
 
 class Cache(BaseCache):
+    __doc__ = _class_description.format(
+        _class_titles['Cache'], 
+        _class_extra_parameters['Cache'])
+
     def __init__(self, key='', ttl=0, noc=0):
         super(Cache, self).__init__(key=key, ttl=ttl, noc=noc,
                                     backend=MemBackend())
 
 
 class FileCache(BaseCache):
+    __doc__ = _class_description.format(
+        _class_titles['FileCache'], 
+        _class_extra_parameters['FileCache'])
+
     def __init__(self, filename, key='', ttl=0, noc=0):
         super(FileCache, self).__init__(key=key, ttl=ttl, noc=noc)
         self.backend = FileBackend(filename)
 
 
 class LimitedCache(BaseCache):
+    __doc__ = _class_description.format(
+        _class_titles['LimitedCache'], 
+        _class_extra_parameters['LimitedCache'])
+
     def __init__(self, key='', ttl=0, noc=0, **kwargs):
         super(LimitedCache, self).__init__(key=key, ttl=ttl, noc=noc)
         self.backend = LimitedMemBackend(**kwargs)
 
 
 class LimitedFileCache(BaseCache):
+    __doc__ = _class_description.format(
+        _class_titles['LimitedFileCache'], 
+        _class_extra_parameters['LimitedFileCache'])
+
     def __init__(self, filename, key='', ttl=0, noc=0, **kwargs):
         super(LimitedFileCache, self).__init__(key=key, ttl=ttl, noc=noc)
         self.backend = LimitedFileBackend(filename, **kwargs)
+
+    
 
 
 # ----------------- Shortcuts  --------------------------
@@ -322,11 +340,4 @@ Shortcut for `memcache = Cache()`.
 Simple cache decorator without encryption.
 """
 
-# -------------------------------------------------------
-
-# ----------------- Docstring setting up ----------------
-for cls in _class_titles:
-    locals()[cls].__doc__ = _class_description.format(
-        _class_titles[cls], 
-        _class_extra_parameters[cls])
 # -------------------------------------------------------

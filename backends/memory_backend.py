@@ -12,7 +12,7 @@ class MemBackend(UserDict, BaseBackend):
     """Store cached data in memory.
     """
 
-    def __init__(self, *args, key='', ttl=0, noc=0):
+    def __init__(self, key='', ttl=0, noc=0):
         self.key = key
         self.ttl = ttl
         self.noc = noc
