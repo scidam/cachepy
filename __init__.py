@@ -191,8 +191,57 @@ __email__ = "kislov@easydan.com"
 __all__ = ('Cache', 'memcache', 'FileCache', 'LimitedFileCache',
            'LimitedCache')
 
-BASE_LOCK = threading.Lock()
+# ----------------------- Block of docstrings ------------------------
 
+_class_description = """{}
+
+    Parameters
+    ==========
+
+{}
+        :param ttl: cache time to live in seconds;
+        :param key: encryption key; empty by default; if provided,
+                    the cached data will be encrypted.
+        :param noc: number of the function calls;
+                    if it is reached, the cache is cleared.
+"""
+
+_class_titles = {
+    'Cache': 'Cache results of function execution in memory.', 
+    'FileCache': 'Caches results of function execution in a file.',
+    'LimitedCache': """Caches the result of a function execution in memory.
+    Uses cache of limited capacity.""",
+    'LimitedFileCache': """Caches the result of a function execution in a file.
+    Uses cache of limited capacity."""}
+
+
+_class_extra_parameters = {'Cache': '', 
+'FileCache': """\
+        :param filename: name of the file, where
+                        the cached data will be stored;""",
+'LimitedCache': """\
+        :param cache_size: cache capacity; an integer number; if it is exeeded,
+                        cached data is removed according to the algorithm
+                        (either 'lfu' or 'mfu');
+        :param algorithm: strategy of removing cached data; either `lfu`
+                          (least frequently used) or `mfu` (most frequently used)
+                          cached value is removed when cache is exhausted.
+""",
+'LimitedFileCache': """\
+        :param filename: name of the file, where
+                        the cached data will be stored;
+        :param cache_size: cache capacity; an integer number; if it is exeeded,
+                        cached data is removed according to the algorithm
+                        (either 'lfu' or 'mfu');
+        :param algorithm:  strategy of removing cached data; either `lfu`
+                        (least frequently used) or `mfu` (most frequently used)
+                        cached value is removed when cache is exhausted.
+"""
+}                                       
+# --------------------------------------------------------------------
+
+
+BASE_LOCK = threading.Lock()
 
 class BaseCache(object):
     """Base class for cache decorator.
@@ -241,54 +290,6 @@ class BaseCache(object):
         self.is_used = True
         return wrapper
 
-# -------------------------- Block of documentation ------------------
-
-_class_description = """{}
-
-    Parameters
-    ==========
-
-{}
-        :param ttl: cache time to live in seconds;
-        :param key: encryption key; empty by default; if provided,
-                    the cached data will be encrypted.
-        :param noc: number of the function calls;
-                    if it is reached, the cache is cleared.
-"""
-
-_class_titles = {
-    'Cache': 'Cache results of function execution in memory.', 
-    'FileCache': 'Caches results of function execution in a file.',
-    'LimitedCache': """Caches the result of a function execution in memory.
-    Uses cache of limited capacity.""",
-    'LimitedFileCache': """Caches the result of a function execution in a file.
-    Uses cache of limited capacity."""}
-
-
-_class_extra_parameters = {'Cache': '', 
-'FileCache': """\
-        :param filename: name of the file, where
-                        the cached data will be stored;""",
-'LimitedCache': """\
-        :param cache_size: cache capacity; an integer number; if it is exeeded,
-                        cached data is removed according to the algorithm
-                        (either 'lfu' or 'mfu');
-        :param algorithm: strategy of removing cached data; either `lfu`
-                          (least frequently used) or `mfu` (most frequently used)
-                          cached value is removed when cache is exhausted.
-""",
-'LimitedFileCache': """\
-        :param filename: name of the file, where
-                        the cached data will be stored;
-        :param cache_size: cache capacity; an integer number; if it is exeeded,
-                        cached data is removed according to the algorithm
-                        (either 'lfu' or 'mfu');
-        :param algorithm:  strategy of removing cached data; either `lfu`
-                        (least frequently used) or `mfu` (most frequently used)
-                        cached value is removed when cache is exhausted.
-"""
-}                                       
-# --------------------------------------------------------------------
 
 class Cache(BaseCache):
     __doc__ = _class_description.format(
