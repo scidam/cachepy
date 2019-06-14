@@ -1,18 +1,19 @@
 """Caching results of functions in Python.
 
+
 Features
 --------
 
     * Memory-based and file-based caches;
-    * Assigning ttl (time-to-live) and noc (the number of calls) for the caches;
-    * Encryption of cached data (symmetric encryption (RSA) algorithm is used);
+    * Assigning ttl (time-to-live) and noc (the number of calls);
+    * Encryption of the cached data (symmetric encryption algorithm (RSA) is used);
     * lfu (least frequently used) and mfu (most frequently used) cache clearing strategies;
     * caches of limited size;
 
-Note
-----
+Notes
+-----
 
-    - Encryption functionality requires `PyCryptodome` package to be installed
+    - Encryption functionality requires `PyCryptodome` package to be installed;
     - File-based caches don't clear the data being stored on the program closing;
       Such data should be cleaned up manually, if needed.
 
@@ -23,7 +24,8 @@ Examples
 
     from cachepy import *
 
-    mycache = Cache()  # cache to memory without encryption
+    mycache = Cache()
+    # save the cached data to memory without encryption
 
     @mycache
     def my_heavy_function(x):
@@ -35,24 +37,25 @@ Examples
     my_heavy_function(2)
     # "Hi, I am called..." will be printed to stdout only once
     # return 4
-    
+
     my_heavy_function(2)
     # return 4
 
 
-To store data to a file, you need to create a decorator as follows:
+To store the data to a file one need to create a decorator as follows:
 
 .. code-block:: python
 
     # create cache-to-file decorator
-    filecache = Cache('mycache')  # mycache.dat will be created; 
+    filecache = FileCache('mycache')  # mycache.dat will be created;
     # `.dat` extension is appended automatically to the filename
-    # (depends on shelve module implementation);
+    # (depends on the shelve module implementation);
 
-Its behaviour is the same as memory-based one.
+Its behaviour is the same as memory-based one, but all cached data is stored in
+the specified file.
 
 One can set up time-to-live (ttl) and/or maximum number of retrievals (noc) 
-for cached data when the decorator is created:
+for the cached data when the decorator is created:
 
 .. code-block:: python
 
@@ -64,15 +67,20 @@ for cached data when the decorator is created:
     @cache_with_ttl
     def my_heavy_function(x):
         '''Performs heavy computations'''
+
         print('Hi, I am called...')
         return x**2
 
     my_heavy_function(3)
+    # Hi, I am called... will be printed
     # return 9
-    my_heavy_function(3) # 'Hi, I am called ...' will not be printed
+    my_heavy_function(3)
+    # 'Hi, I am called ...' will not be printed
     # return 9
     time.sleep(2)
-    my_heavy_function(3) # 'Hi, I am called ...' will be printed again
+    my_heavy_function(3)
+    # 'Hi, I am called ...' will be printed again
+    # return 9
 
 
 .. code-block:: python
@@ -91,7 +99,8 @@ for cached data when the decorator is created:
     my_heavy_function(3) # 'Hi, I am called ...' will be printed again
 
 
-It is easy to use both `noc` and `ttl` arguments on a cache decorator:
+It is easy to use both `noc` and `ttl` arguments when defining 
+a caching decorator:
 
 .. code-block:: python
 
@@ -100,6 +109,7 @@ It is easy to use both `noc` and `ttl` arguments on a cache decorator:
     @cache_with_noc_ttl
     def my_heavy_function(x):
         '''Performs heavy computations'''
+
         print('Hi, I am called...')
         return x**2
 
@@ -107,44 +117,56 @@ It is easy to use both `noc` and `ttl` arguments on a cache decorator:
     my_heavy_function(3)  # 'Hi, I am called ...' will not be printed
     my_heavy_function(3)  # 'Hi, I am called ...' will be printed (noc is
     # reached, recompute the func value)
-    time.sleep(2)  # get ttl to be expired
+    time.sleep(2)  # get ttl expired
     my_heavy_function(3) # 'Hi, I am called ...' will be printed again
 
-One can encrypt cached data by providing non-empty `key` argument as
+One can encrypt the cached data by providing non-empty `key` argument as
 a password (RSA encryption algorithm is used):
 
 .. code-block:: python
 
     cache_to_file_ttl_noc = FileCache('mycache',
-                                      noc=2, ttl = 2, key='mypassword')
+                                      noc=2, ttl = 2,
+                                      key='mypassword')
 
     @cache_to_file_ttl_noc
     def my_heavy_function(x):
         '''Performs heavy computations'''
+
         print('Hi, I am called...')
         return x**2
 
     my_heavy_function(2) # 'Hi, I am called...' will be printed
     my_heavy_function(2) # 'Hi, I am called...' will not be printed
 
-When one calls `my_heavy_function` being decorated by  `cache_to_file_ttl_noc`,
-the value `4` will be computed and the result of
+When `my_heavy_function` is decorated by `cache_to_file_ttl_noc`, as it shown
+in the example above, the value `2**2 = 4` will be computed and the result of
 computation will be stored in the file named `mycache.dat`. Along
 with the result of computation,  additional information will be stored
-in that file `mycache.dat` 
-(all the data will be encrypted by the RSA encryption algorithm
-using password `mypassword`): 1) result's expiration time
-(computed from ttl), noc and the number
-of already performed calls for the function being decorated (`my_heavy_function`).
+in the file `mycache.dat` (all the data will be encrypted by the RSA 
+encryption algorithm using password `mypassword`): 1) result's expiration time
+(computed from ttl), noc and the number of already performed calls
+of the function being decorated (`my_heavy_function`).
 
 Encryption is available only if `PyCryptodome` package is installed and
 `key` parameter (non-empty string representing password) is passed to the
-cache constructor.
+cache constructor. It also could work with old PyCrypto package.
 
 If you passed non-empty `key` parameter to the cache constructor,
 but `PyCryptodome` was not found, special warning would raised in this case
 ("PyCryptodome not installed. Data isn't encrypted") and
 the cache would worked as usual, but without encryption functionality.
+
+
+Caching with limitations
+------------------------
+
+Standard cache constructors allow managing 
+caches of unlimited capacity.  There are also caches of limited capacity. 
+Such cachse are created by constructors `LimitedCache` and `LimitedFileCache`.
+These decorator constructors have additional
+parameters `cache_size` (the maximum number of items stored in cache) and
+`algorithm` (cache clearing algorithm). 
 
 
 Testing
@@ -153,6 +175,12 @@ Testing
 .. code-block:: bash
 
          python -m  cachepy.test
+
+or, if `pytest` is installed, execute in the root folder of the package:
+
+.. code-block:: bash
+
+         pytest test.py
 
 
 TODO
@@ -237,7 +265,8 @@ _class_extra_parameters = {'Cache': '',
                         (least frequently used) or `mfu` (most frequently used)
                         cached value is removed when cache is exhausted.
 """
-}                                       
+}
+
 # --------------------------------------------------------------------
 
 
@@ -282,6 +311,7 @@ class BaseCache(object):
 
         def clear():
             """Clear cache for specified funcion"""
+
             with BASE_LOCK:
                 for data_key in self.cached_keys:
                     self.backend.remove(data_key)
@@ -329,8 +359,6 @@ class LimitedFileCache(BaseCache):
     def __init__(self, filename, key='', ttl=0, noc=0, **kwargs):
         super(LimitedFileCache, self).__init__(key=key, ttl=ttl, noc=noc)
         self.backend = LimitedFileBackend(filename, **kwargs)
-
-    
 
 
 # ----------------- Shortcuts  --------------------------
