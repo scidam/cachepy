@@ -47,7 +47,7 @@ class Helpers(object):
 
     def get_function_hash(self, func, args=None, kwargs=None,
                           ttl=None, key=None, noc=None):
-        """Compute the hash of the function to be evaluated.
+        """Compute the hash of the function to be cached.
         """
 
         base_hash = settings.HASH_FUNCTION()

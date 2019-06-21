@@ -69,13 +69,13 @@ class AESCipher:
         Note
         ====
 
-            The key is internally represented as a byte-object. 
+            The key is internally represented as a byte-object.
         """
 
         self.key = to_bytes(settings.KEY_HASHER(to_bytes(key)).hexdigest())
 
     def encrypt(self, raw):
-        """Encrypt a string (either a string of bytes or a regular string).
+        """Encrypt a string (either a string of bytes or a normal string).
 
         Parameters
         ==========

@@ -11,7 +11,7 @@ class Settings:
     MAX_KEY_LENGTH = 100
     MIN_KEY_LENGTH = 3
 
-    # ENCODER & decoder
+    # ENCODER & DECODER
     BASE_ENCODER = staticmethod(b64encode)
     BASE_DECODER = staticmethod(b64decode)
 

@@ -136,7 +136,7 @@ class BaseLimitedBackend(BaseBackend):
     ==========
 
         :param cache_size: cache capacity, default value is {}.
-        :param algorithm : cache clearing algorithm; the cache cleared when
+        :param algorithm : cache clearing algorithm; the cache is clearing when
                            it is almost full; available values are `lfu` and
                            `mfu`: stands for least frequently used and most
                            frequently used caching algorithms respectively; 

@@ -1,5 +1,7 @@
-"""Caching results of functions in Python.
+"""Caching results of function executions in Python.
 
+A caching toolset for Python. It is tested for both 
+Python 2.7.x and 3.4+ (<3.8) versions of Python.
 
 Features
 --------
@@ -13,9 +15,9 @@ Features
 Notes
 -----
 
-    - Encryption functionality requires `PyCryptodome` package to be installed;
-    - File-based caches don't clear the data being stored on the program closing;
-      Such data should be cleaned up manually, if needed.
+    - Encryption functionality requires the `PyCryptodome` package to be installed;
+    - File-based caches save the cached data in a file; files with cached data should be
+      cleaned up manually, if needed.
 
 Examples
 --------
@@ -42,19 +44,19 @@ Examples
     # return 4
 
 
-To store the data to a file one need to create a decorator as follows:
+To store data to a file one need initialize a decorator as follows:
 
 .. code-block:: python
 
     # create cache-to-file decorator
-    filecache = FileCache('mycache')  # mycache.dat will be created;
+    filecache = FileCache('mycache')  # mycache.dat file will be created;
     # `.dat` extension is appended automatically to the filename
     # (depends on the shelve module implementation);
 
 Its behaviour is the same as memory-based one, but all cached data is stored in
 the specified file.
 
-One can set up time-to-live (ttl) and/or maximum number of retrievals (noc) 
+One can set up time-to-live (ttl) and/or maximum number of calls (noc) 
 for the cached data when the decorator is created:
 
 .. code-block:: python
@@ -161,12 +163,17 @@ the cache would worked as usual, but without encryption functionality.
 Caching with limitations
 ------------------------
 
-Standard cache constructors allow managing 
-caches of unlimited capacity.  There are also caches of limited capacity. 
-Such cachse are created by constructors `LimitedCache` and `LimitedFileCache`.
-These decorator constructors have additional
-parameters `cache_size` (the maximum number of items stored in cache) and
-`algorithm` (cache clearing algorithm). 
+Standard cache constructors are used to initialize caches of unlimited capacity.
+There are also caches of limited capacity.
+Such caches are initilized by constructors named `LimitedCache` and `LimitedFileCache`.
+These constructors have additional
+parameters `cache_size` (the maximum number of items stored in the cache) and
+`algorithm` (cache clearing algorithm). Available values of `algorithm` are
+`lfu` (default, stands for least frequently used) and `mfu` (most frequently used).
+When `algorithm=lfu` then the least frequently used item is removed from the cache, 
+if it is exhausted. In case of `algorithm=mfu`, everything behaves the same way, but 
+the most frequantly used item is removed.
+
 
 
 Testing
@@ -227,7 +234,7 @@ _class_description = """{}
     ==========
 
 {}
-        :param ttl: cache time to live in seconds;
+        :param ttl: time-to-live of the cache (in seconds);
         :param key: encryption key; empty by default; if provided,
                     the cached data will be encrypted.
         :param noc: number of the function calls;
@@ -271,6 +278,7 @@ _class_extra_parameters = {'Cache': '',
 
 
 BASE_LOCK = threading.Lock()
+
 
 class BaseCache(object):
     """Base class for cache decorator.
