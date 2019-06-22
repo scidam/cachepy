@@ -1,0 +1,12 @@
+
+
+
+
+
+deploy:
+  provider: pypi
+  user: scidam
+  password:
+    secured: my_password_goes_here
+  on:
+    tags: true
