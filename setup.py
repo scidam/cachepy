@@ -7,9 +7,9 @@ with open(README_FILE, 'r') as d:
 
 setup(name='cachepy',
       packages=['.'],
-      version='0.1',
-      description='Caching results of function executions in Python',
-      keywords='caching, python, cache to file, caching callables',
+      version='1.0',
+      description='Caching results of functions in Python',
+      keywords='caching, python, file-based cache, cache encryption, encrypted cache'
       long_description=desc,
       include_package_data=True,
       author='Dmitry Kislov',
