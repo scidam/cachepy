@@ -1,15 +1,15 @@
-"""Caching results of function executions in Python.
+"""Caching results of functions in Python.
 
-A caching toolset for Python. It is tested for both 
-Python 2.7.x and 3.4+ (<3.8) versions of Python.
+A caching toolset for Python. It is tested for both
+Python 2.7.x and 3.4+ (<3.8).
 
 Features
 --------
 
     * Memory-based and file-based caches;
-    * Assigning ttl (time-to-live) and noc (the number of calls);
+    * Ability to set the TTL (time-to-live) and NOC (the number of calls) on caches;
     * Encryption of the cached data (symmetric encryption algorithm (RSA) is used);
-    * lfu (least frequently used) and mfu (most frequently used) cache clearing strategies;
+    * LFU (least frequently used) and MFU (most frequently used) cache-clearing strategies;
     * caches of limited size;
 
 Notes
@@ -44,7 +44,7 @@ Examples
     # return 4
 
 
-To store data to a file one need initialize a decorator as follows:
+To store data to a file, one needs to initialize a decorator, as follows:
 
 .. code-block:: python
 
@@ -53,11 +53,11 @@ To store data to a file one need initialize a decorator as follows:
     # `.dat` extension is appended automatically to the filename
     # (depends on the shelve module implementation);
 
-Its behaviour is the same as memory-based one, but all cached data is stored in
+Its behavior is the same as a memory-based one, but all cached data is stored in
 the specified file.
 
-One can set up time-to-live (ttl) and/or maximum number of calls (noc) 
-for the cached data when the decorator is created:
+One can set up time-to-live (TTL) and/or maximum number of calls (NOC)
+for the cached data when the decorator is initialized:
 
 .. code-block:: python
 
@@ -101,7 +101,7 @@ for the cached data when the decorator is created:
     my_heavy_function(3) # 'Hi, I am called ...' will be printed again
 
 
-It is easy to use both `noc` and `ttl` arguments when defining 
+It is easy to use both `NOC` and `TTL` arguments when defining
 a caching decorator:
 
 .. code-block:: python
@@ -122,7 +122,7 @@ a caching decorator:
     time.sleep(2)  # get ttl expired
     my_heavy_function(3) # 'Hi, I am called ...' will be printed again
 
-One can encrypt the cached data by providing non-empty `key` argument as
+One can encrypt the cached data by providing a non-empty `key` argument as
 a password (RSA encryption algorithm is used):
 
 .. code-block:: python
@@ -141,23 +141,23 @@ a password (RSA encryption algorithm is used):
     my_heavy_function(2) # 'Hi, I am called...' will be printed
     my_heavy_function(2) # 'Hi, I am called...' will not be printed
 
-When `my_heavy_function` is decorated by `cache_to_file_ttl_noc`, as it shown
+When `my_heavy_function` is decorated by `cache_to_file_ttl_noc`, as shown
 in the example above, the value `2**2 = 4` will be computed and the result of
-computation will be stored in the file named `mycache.dat`. Along
-with the result of computation,  additional information will be stored
-in the file `mycache.dat` (all the data will be encrypted by the RSA 
-encryption algorithm using password `mypassword`): 1) result's expiration time
-(computed from ttl), noc and the number of already performed calls
-of the function being decorated (`my_heavy_function`).
+the computation will be stored in the file named `mycache.dat`. Along
+with the result of the computation,  additional information will be stored
+in the file `mycache.dat`. The additional information includes:
+1) the result's expiration time (computed from the TTL), 
+2) NOC and 3) the number of already performed calls of the function being
+decorated (`my_heavy_function`).
 
-Encryption is available only if `PyCryptodome` package is installed and
-`key` parameter (non-empty string representing password) is passed to the
-cache constructor. It also could work with old PyCrypto package.
+Encryption is available only if `PyCryptodome` package is installed and the
+`key` parameter (a non-empty string representing the password) is passed to the
+cache constructor. It also could work with the old PyCrypto package.
 
-If you passed non-empty `key` parameter to the cache constructor,
-but `PyCryptodome` was not found, special warning would raised in this case
-("PyCryptodome not installed. Data isn't encrypted") and
-the cache would worked as usual, but without encryption functionality.
+If you passed the non-empty `key` parameter to the cache constructor
+but `PyCryptodome` was not found, a special warning would be raised in this case
+("PyCryptodome not installed. Data will not be encrypted") and
+the cache would work as usual but without encryption functionality.
 
 
 Caching with limitations
@@ -165,15 +165,14 @@ Caching with limitations
 
 Standard cache constructors are used to initialize caches of unlimited capacity.
 There are also caches of limited capacity.
-Such caches are initilized by constructors named `LimitedCache` and `LimitedFileCache`.
+Such caches are initialized by constructors named `LimitedCache` and `LimitedFileCache`.
 These constructors have additional
 parameters `cache_size` (the maximum number of items stored in the cache) and
-`algorithm` (cache clearing algorithm). Available values of `algorithm` are
-`lfu` (default, stands for least frequently used) and `mfu` (most frequently used).
-When `algorithm=lfu` then the least frequently used item is removed from the cache, 
-if it is exhausted. In case of `algorithm=mfu`, everything behaves the same way, but 
-the most frequantly used item is removed.
-
+`algorithm` (cache-clearing algorithm). Available `algorithm` values are
+`lfu` (default, which stands for least frequently used) and `mfu` (most frequently used).
+When `algorithm='lfu'`, then the least frequently used item is removed from the cache,
+if it is exhausted. In case of `algorithm='mfu'`, everything behaves the same way,
+with the only difference being that the most frequently used item is removed.
 
 
 Testing

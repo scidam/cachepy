@@ -24,13 +24,15 @@ class BaseBackend(object):
     """
 
     def _to_bytes(self, data, key='', expired=None, noc=0, ncalls=0):
-        """Serialize (and encrypt if `key` is provided) the data and represent it as string.
+        """Serialize (and encrypt if `key` is provided) the data and represent
+        it as string.
 
         **Parameters**
 
             :param data: any python serializable (pickable) object
-            :param key: If the key is provided and `pycryptodome` is installed, cached
-                        data will be encrypted. Empty string by default.
+            :param key: If the key is provided (is not empty) and `pycryptodome`
+                        is installed, cached data will be encrypted.
+                        It is empty by default.
             :param expired: exact date when the cache will be expired; `None` by default
             :param noc: the number of allowed calls;
             :param ncalls: internal counter of calls;
@@ -45,9 +47,7 @@ class BaseBackend(object):
         data_tuple = (data, expired, noc, ncalls)
 
         if not can_encrypt and key:
-            # TODO: Probably not only Pycrypto will be using for encryption!!!
-            # Clarification needed
-            warnings.warn("Pycrypto is not installed. The data will not be encrypted",
+            warnings.warn("Pycrypto not installed. The data will not be encrypted",
                           UserWarning)
             result = encode_safely(data_tuple)
         elif can_encrypt and key:
@@ -61,8 +61,8 @@ class BaseBackend(object):
         return result
 
     def _from_bytes(self, byte_data, key=''):
-        """Deserialize (and decrypt if key is provided) cached
-        data stored in the byte_data (bytes object).
+        """Deserialize (and decrypt, if the key is provided) cached
+        data stored in the byte_data (bytes object) parameter.
         """
 
         if not can_encrypt and key:
@@ -95,7 +95,7 @@ class BaseBackend(object):
             del self[key]
 
     def get_data(self, data_key, key=''):
-        """Get the data from the cache.
+        """Get data from the cache.
 
         :param data_key: a key for accessing the data; 
         :param key: if provided (e.g. non-empty string), will be used to
@@ -103,7 +103,7 @@ class BaseBackend(object):
         :returns: the data extracted from the cache, a python object.
         """
 
-        flag = False  # set to True if data was successfully extracted.
+        flag = False  # set to True, if data was successfully extracted.
         extracted = self.get(data_key, -1)
 
         if extracted != -1:
@@ -135,10 +135,10 @@ class BaseLimitedBackend(BaseBackend):
     Parameters
     ==========
 
-        :param cache_size: cache capacity, default value is {}.
-        :param algorithm : cache clearing algorithm; the cache is clearing when
-                           it is almost full; available values are `lfu` and
-                           `mfu`: stands for least frequently used and most
+        :param cache_size: integer, cache capacity, default value is {}.
+        :param algorithm : string, cache-clearing algorithm; the cache is clearing when
+                           it is almost exhausted; available values are `lfu` and
+                           `mfu`: stands for the least frequently used and most
                            frequently used caching algorithms respectively; 
                            default value is {}.
     """.format(settings.DEFAULT_CACHE_SIZE, settings.DEFAULT_CACHE_ALGO)
@@ -176,7 +176,7 @@ class BaseLimitedBackend(BaseBackend):
                         pass
                 else:
                     raise RuntimeError("Cache is exhausted. No methods "
-                                       "were found to clear cached item.")
+                                       "were defined for removing cached data.")
             else:
                 self.remove(to_remove)
                 self._counter.pop(to_remove)
