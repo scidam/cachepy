@@ -14,14 +14,10 @@ matrix:
       python: 2.7
     - name: "Standard Python 3.4"
       python: 3.4
-    - name: "Standard Python 3.5"
-      python: 3.5
+    - name: "Standard Python 3.5.4"
+      python: 3.5.4
     - name: "Standard Python 3.6"
       python: 3.6
-    - name: "Python 3.7.2 on macOS"
-      os: osx
-      osx_image: xcode10.2
-      language: shell       
     - name: "Python 3.7.3 on Windows"
       os: windows
       language: shell
