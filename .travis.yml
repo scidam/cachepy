@@ -38,4 +38,3 @@ before_script:
   - rm -f "*.bak"
   - rm -f "*.dir"
 
-cache: false
