@@ -38,6 +38,6 @@ install:
   - pip install numpy
 
 before_script:
-  - rm "*.dat"
-  - rm "*.bak"
-  - rm "*.dir"
+  - rm -f "*.dat"
+  - rm -f "*.bak"
+  - rm -f "*.dir"
