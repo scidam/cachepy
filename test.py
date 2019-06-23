@@ -390,7 +390,7 @@ class LimitedMemBackendTests(unittest.TestCase):
         print("All available keys are: ", self.backend_mfu.keys())
         self.assertEqual(len(self.backend_mfu.keys()), 3)
 
-
+@unittest.skipIf(os.environ.get('TRAVIS', False), "Limited file-based caches disallowed when testing in travis-ci environment")
 class LimitedFileBackenTests(LimitedMemBackendTests):
     def setUp(self):
         self.backend_lfu = LimitedFileBackend(TEMP_FILENAME, cache_size=3, algorithm='lfu')
@@ -433,6 +433,7 @@ class LimitedCacheToMemTests(BaseCacheToMemTests):
         self.assertEqual(len(self.decorator_key_ttl_noc.backend.keys()), 2)
 
 
+@unittest.skipIf(os.environ.get('TRAVIS', False), "Limited file-based caches disallowed when testing in travis-ci environment")
 class LimitedCacheToFileTests(LimitedCacheToMemTests):
 
     def setUp(self):
