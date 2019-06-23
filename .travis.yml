@@ -37,5 +37,3 @@ install:
   - pip install PyCryptodome
   - pip install numpy
 
-virtualenv:
-  system_site_packages: true
