@@ -9,14 +9,14 @@ setup(name='cachepy',
       packages=['.'],
       version='1.0',
       description='Caching results of functions in Python',
-      keywords='caching, python, file-based cache, cache encryption, encrypted cache'
+      keywords='caching, python, file-based cache, memory-based cache, encrypted cache'
       long_description=desc,
       include_package_data=True,
       author='Dmitry Kislov',
       author_email='kislov@easydan.com',
       url='https://github.com/scidam/cachepy',
       classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
