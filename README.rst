@@ -208,4 +208,7 @@ Log list
         - initial release
 
 
-.. codeauthor:: Dmitry Kislov <kislov@easydan.com>
+Author
+------
+
+    Dmitry Kislov <kislov@easydan.com>
