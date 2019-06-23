@@ -393,14 +393,12 @@ class LimitedMemBackendTests(unittest.TestCase):
 
 class LimitedFileBackenTests(LimitedMemBackendTests):
     def setUp(self):
-        FileBackendTests.clear_storage()
-        self.backend_lfu = LimitedFileBackend(TEMP_FILENAME, cache_size=3, algorithm='lfu')
-        self.backend_mfu = LimitedFileBackend(TEMP_FILENAME, cache_size=3, algorithm='mfu')
+        self.backend_lfu = LimitedFileBackend('limited_lfu', cache_size=3, algorithm='lfu')
+        self.backend_mfu = LimitedFileBackend('limited_mfu', cache_size=3, algorithm='mfu')
 
     def tearDown(self):
         self.backend_lfu.close()
         self.backend_mfu.close()
-        FileBackendTests.clear_storage()
 
 
 class LimitedCacheToMemTests(BaseCacheToMemTests):
