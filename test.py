@@ -387,7 +387,6 @@ class LimitedMemBackendTests(unittest.TestCase):
     def test_store_to_mem_limited_overflow(self):
         for j in range(5):
             self.backend_mfu.store_data('hash' + str(j), 'data' + str(j))
-        print("All available keys are: ", self.backend_mfu.keys())
         self.assertEqual(len(self.backend_mfu.keys()), 3)
 
 @unittest.skipIf(os.environ.get('TRAVIS', False), "Limited file-based caches disallowed when testing in travis-ci environment")
