@@ -1,6 +1,10 @@
 Caching results of functions in Python
 ======================================
 
+.. image:: https://travis-ci.com/scidam/cachepy.svg?branch=dev
+    :target: https://travis-ci.com/scidam/cachepy
+
+
 A caching toolset for Python. It is tested for both
 Python 2.7.x and 3.4+ (<3.8).
 
