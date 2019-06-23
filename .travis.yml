@@ -37,3 +37,7 @@ install:
   - pip install PyCryptodome
   - pip install numpy
 
+before_script:
+  - rm "*.dat"
+  - rm "*.bak"
+  - rm "*.dir"
