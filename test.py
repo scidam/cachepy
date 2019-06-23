@@ -432,10 +432,10 @@ class LimitedCacheToMemTests(BaseCacheToMemTests):
         self.assertEqual(len(self.decorator_key_ttl_noc.backend.keys()), 2)
 
 
-
 class LimitedCacheToFileTests(LimitedCacheToMemTests):
 
     def setUp(self):
+        BaseCacheToFileTests.clear_storage()
         self.decorator = LimitedFileCache(TEMP_FILENAME, cache_size=2)
         self.decorator_key = LimitedFileCache(TEMP_FILENAME, key='a', cache_size=2)
         self.decorator_key_ttl_noc = LimitedFileCache(TEMP_FILENAME, key='a', ttl=1, noc=2, cache_size=2)
