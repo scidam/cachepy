@@ -27,10 +27,10 @@ matrix:
 
 install: pip install --upgrade pip
 
-script: pytest test.py
+script: python -m cachepy.test
 
 install:
-  - pip install pytest
+  - pip install cachepy
   - pip install PyCryptodome
   - pip install numpy
 

@@ -187,12 +187,6 @@ Testing
 
          python -m  cachepy.test
 
-or, if `pytest` is installed, execute in the root folder of the package:
-
-.. code-block:: bash
-
-         pytest test.py
-
 
 TODO
 ----
