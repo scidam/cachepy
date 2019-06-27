@@ -187,12 +187,6 @@ Testing
 
          python -m  cachepy.test
 
-or, if `pytest` is installed, execute in the root folder of the package:
-
-.. code-block:: bash
-
-         pytest test.py
-
 
 TODO
 ----
@@ -203,9 +197,13 @@ TODO
 Log list
 --------
 
-    * Version 1.0
+    * Version 1.1
+    * Version 1.0 (broken installation via pip/pipenv)
     * Version 0.1
         - initial release
 
 
-.. codeauthor:: Dmitry Kislov <kislov@easydan.com>
+Author
+------
+
+    Dmitry Kislov <kislov@easydan.com>

@@ -6,10 +6,10 @@ with open(README_FILE, 'r') as d:
 
 
 setup(name='cachepy',
-      packages=['.'],
-      version='1.0',
+      packages=['cachepy', 'cachepy.backends'],
+      version='1.1',
       description='Caching results of functions in Python',
-      keywords='caching, python, file-based cache, memory-based cache, encrypted cache'
+      keywords='caching, python, file-based cache, memory-based cache, encrypted cache',
       long_description=desc,
       include_package_data=True,
       author='Dmitry Kislov',
