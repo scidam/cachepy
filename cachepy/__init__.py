@@ -198,7 +198,8 @@ TODO
 Log list
 --------
 
-    * Version 1.0
+    * Version 1.1
+    * Version 1.0 (broken installation via pip/pipenv)
     * Version 0.1
         - initial release
 
@@ -217,7 +218,7 @@ from functools import wraps
 # -------------------- Module meta info --------------------
 __author__ = "Dmitry E. Kislov"
 __license__ = "MIT"
-__version__ = "1.0"
+__version__ = "1.1"
 __maintainer__ = "Dmitry E. Kislov"
 __email__ = "kislov@easydan.com"
 # ----------------------------------------------------------
