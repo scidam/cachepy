@@ -197,7 +197,8 @@ TODO
 Log list
 --------
 
-    * Version 1.0
+    * Version 1.1
+    * Version 1.0 (broken installation via pip/pipenv)
     * Version 0.1
         - initial release
 
