@@ -25,16 +25,31 @@ matrix:
     - name: "Python 3.7.3 on Windows"
       os: windows
       language: shell
-      before_install: choco install python
+      before_install:
+         - choco install python --version 3.7.3
+         - python -m pip install --upgrade pip
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
-
-install: pip install --upgrade pip
-
-script: python -m cachepy.test
+    - name: "Python 3.8.0 on Windows"
+      os: windows
+      language: shell
+      before_install:
+         - choco install python --version 3.8.0
+         - python -m pip install --upgrade pip
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+    - name: "Python 3.9.0 on Windows"
+      os: windows
+      language: shell
+      before_install:
+         - choco install python --version 3.9.0
+         - python -m pip install --upgrade pip
+      env: PATH=/c/Python39:/c/Python39/Scripts:$PATH
 
 install:
-  - pip install PyCryptodome
-  - pip install numpy
+  - python -m pip install --upgrade pip
+  - python -m pip install PyCryptodome
+  - python -m pip install numpy
+
+script: python -m cachepy.test
 
 before_script:
   - rm -f "*.dat"
