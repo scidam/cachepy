@@ -2,7 +2,7 @@ import os
 import shelve
 from .base import BaseLimitedBackend, BaseBackend
 import warnings
-import datetime
+
 
 try:
     basestring
@@ -14,7 +14,7 @@ class FileBackend(BaseBackend):
     """File-based cache backend.
     """
 
-    def __init__(self, filename, **kwargs):
+    def __init__(self, filename):
         self.filename = filename
         if not isinstance(self.filename, basestring):
             raise TypeError("Filename should be a string. ")
@@ -30,8 +30,9 @@ class FileBackend(BaseBackend):
         if key in self.db:
             del self.db[key]
 
-    def store_data(self, *args, **kwargs):
-        super(FileBackend, self).store_data(*args, **kwargs)
+    def store_data(self, data_key, data, key='', ttl=0, noc=0, ncalls=0):
+        super(FileBackend, self).store_data(data_key, data, key='',
+                                            ttl=0, noc=0, ncalls=0)
         self.db.sync()
 
     def get(self, key, default=None):
