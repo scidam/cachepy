@@ -4,6 +4,7 @@ language: python
 branches:
   only:
   - dev
+  - testing
 
 matrix:
   include:
@@ -32,7 +33,6 @@ install: pip install --upgrade pip
 script: python -m cachepy.test
 
 install:
-  - pip install cachepy
   - pip install PyCryptodome
   - pip install numpy
 
