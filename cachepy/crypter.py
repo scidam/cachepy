@@ -9,6 +9,8 @@ __all__ = ('AESCipher',)
 
 PY3 = sys.version_info.major == 3
 
+__allowed_symbols = string.ascii_lowercase + string.digits
+
 
 def to_bytes(obj):
     """Ensures that the obj is of byte-type.
@@ -23,21 +25,36 @@ def to_bytes(obj):
         if isinstance(obj, str):
             return obj
         else:
-            return obj.encode(settings.DEFAULT_ENCODING) if isinstance(obj, unicode) else ''
+            return obj.encode(settings.DEFAULT_ENCODING)\
+                if isinstance(obj, unicode) else ''  # noqa: F821
 
 
 def padding(s, bs=AES.block_size):
-    """Fills a bytes-like object with arbitrary symbols to make its length divisible by `bs`.
+    """Fills a bytes-like object with arbitrary symbols to make its length
+    divisible by `bs`.
     """
-    
+
     s = to_bytes(s)
 
     if len(s) % bs == 0:
-        res = s + b''.join(map(to_bytes, [random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(bs - 1)])) + to_bytes(chr(96 - bs))
+        res = s + b''.join(
+            map(
+                to_bytes,
+                [random.SystemRandom().choice(__allowed_symbols)
+                 for _ in range(bs - 1)])) + to_bytes(chr(96 - bs))
     elif len(s) % bs > 0 and len(s) > bs:
-        res = s + b''.join(map(to_bytes, [random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(bs - len(s) % bs - 1)])) + to_bytes(chr(96 + len(s) % bs - bs))
+        res = s + b''.join(
+            map(
+                to_bytes,
+                [random.SystemRandom().choice(__allowed_symbols)
+                    for _ in range(bs - len(s) % bs - 1)])) + \
+                to_bytes(chr(96 + len(s) % bs - bs))
     else:
-        res = s + b''.join(map(to_bytes, [random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(bs - len(s) - 1)])) + to_bytes(chr(96 + len(s) - bs))
+        res = s + b''.join(
+            map(to_bytes,
+                [random.SystemRandom().choice(__allowed_symbols)
+                 for _ in range(bs - len(s) - 1)])) +\
+                     to_bytes(chr(96 + len(s) - bs))
     return res
 
 

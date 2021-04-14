@@ -15,8 +15,6 @@ class BaseBackend(object):
     Backends are used for control processes of storing and retrieving
     cached data.
 
-    TODO: Verify docstrings!!!!
-
     .. note::
             - Backend is a dict-like object, that performs storing and
               retrieving data by key, e.g. backend['hash']

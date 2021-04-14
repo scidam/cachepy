@@ -6,10 +6,10 @@ from .conf import settings
 try:
     import cPickle as pickle
 except ImportError:
-    import pickle
+    import pickle  # type: ignore
 
 try:
-    from .crypter import AESCipher
+    from .crypter import AESCipher  # noqa: F401
     can_encrypt = True
 except ImportError:
     can_encrypt = False
@@ -29,8 +29,9 @@ class Helpers(object):
         result = None
         try:
             result = settings.BASE_ENCODER(pickle.dumps(data))
-        except:
-            warnings.warn("Data could not be serialized.", RuntimeWarning)
+        except Exception as exc:
+            warnings.warn("Data could not be serialized. "
+                          "Exception: {}".format(exc), RuntimeWarning)
         return result
 
     def decode_safely(self, encoded_data):
@@ -40,8 +41,9 @@ class Helpers(object):
         result = None
         try:
             result = pickle.loads(settings.BASE_DECODER(encoded_data))
-        except:
-            warnings.warn("Could not load and deserialize the data.",
+        except Exception as exc:
+            warnings.warn("Could not load and deserialize the data."
+                          "Exception: {}".format(exc),
                           RuntimeWarning)
         return result
 
@@ -67,7 +69,10 @@ class Helpers(object):
         if kwargs:
             for k in sorted(kwargs):
                 if PY3:
-                    base_hash.update(("{}={}".format(k, repr(kwargs[k]))).encode(settings.DEFAULT_ENCODING))
+                    base_hash.update(("{}={}".format(
+                        k,
+                        repr(kwargs[k]))).encode(settings.DEFAULT_ENCODING)
+                    )
                 else:
                     base_hash.update(("{}={}".format(k, repr(kwargs[k]))))
 

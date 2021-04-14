@@ -1,23 +1,27 @@
 """Caching results of functions in Python.
 
 A caching toolset for Python. It is tested for both
-Python 2.7.x and 3.4+ (<3.8).
+Python 2.7.x and 3.4+ (<3.10).
 
 Features
 --------
 
     * Memory-based and file-based caches;
-    * Ability to set the TTL (time-to-live) and NOC (the number of calls) on caches;
-    * Encryption of the cached data (symmetric encryption algorithm (RSA) is used);
-    * LFU (least frequently used) and MFU (most frequently used) cache-clearing strategies;
+    * Ability to set the TTL (time-to-live) and NOC (the number of calls)
+      on caches;
+    * Encryption of the cached data (symmetric encryption algorithm (RSA)
+      is used);
+    * LFU (least frequently used) and MFU (most frequently used)
+      cache-clearing strategies;
     * caches of limited size;
 
 Notes
 -----
 
-    - Encryption functionality requires the `PyCryptodome` package to be installed;
-    - File-based caches save the cached data in a file; files with cached data should be
-      cleaned up manually, if needed.
+    - Encryption functionality requires the `PyCryptodome` package to be
+      installed;
+    - File-based caches save the cached data in a file; files with cached data
+      should be cleaned up manually, if needed.
 
 Examples
 --------
@@ -33,11 +37,11 @@ Examples
     def my_heavy_function(x):
         '''Performs heavy computations'''
 
-        print('Hi, I am called...')
+        print('Hi, I was invoked...')
         return x**2
 
     my_heavy_function(2)
-    # "Hi, I am called..." will be printed to stdout only once
+    # "Hi, I was invoked..." will be printed to stdout only once
     # return 4
 
     my_heavy_function(2)
@@ -53,8 +57,8 @@ To store data to a file, one needs to initialize a decorator, as follows:
     # `.dat` extension is appended automatically to the filename
     # (depends on the shelve module implementation);
 
-Its behavior is the same as a memory-based one, but all cached data is stored in
-the specified file.
+Its behavior is the same as a memory-based one, but all cached data is stored
+in the specified file.
 
 One can set up time-to-live (TTL) and/or maximum number of calls (NOC)
 for the cached data when the decorator is initialized:
@@ -70,18 +74,18 @@ for the cached data when the decorator is initialized:
     def my_heavy_function(x):
         '''Performs heavy computations'''
 
-        print('Hi, I am called...')
+        print('Hi, I was invoked...')
         return x**2
 
     my_heavy_function(3)
-    # Hi, I am called... will be printed
+    # Hi, I was invoked... will be printed
     # return 9
     my_heavy_function(3)
-    # 'Hi, I am called ...' will not be printed
+    # 'Hi, I was invoked ...' will not be printed
     # return 9
     time.sleep(2)
     my_heavy_function(3)
-    # 'Hi, I am called ...' will be printed again
+    # 'Hi, I was invoked ...' will be printed again
     # return 9
 
 
@@ -93,12 +97,12 @@ for the cached data when the decorator is initialized:
     def my_heavy_function(x):
         '''Performs heavy computations'''
 
-        print('Hi, I am called...')
+        print('Hi, I was invoked...')
         return x**2
 
     my_heavy_function(3)
-    my_heavy_function(3) # 'Hi, I am called ...' will not be printed
-    my_heavy_function(3) # 'Hi, I am called ...' will be printed again
+    my_heavy_function(3) # 'Hi, I was invoked ...' will not be printed
+    my_heavy_function(3) # 'Hi, I was invoked ...' will be printed again
 
 
 It is easy to use both `NOC` and `TTL` arguments when defining
@@ -112,15 +116,15 @@ a caching decorator:
     def my_heavy_function(x):
         '''Performs heavy computations'''
 
-        print('Hi, I am called...')
+        print('Hi, I was invoked...')
         return x**2
 
     my_heavy_function(3)
-    my_heavy_function(3)  # 'Hi, I am called ...' will not be printed
-    my_heavy_function(3)  # 'Hi, I am called ...' will be printed (noc is
+    my_heavy_function(3)  # 'Hi, I was invoked ...' will not be printed
+    my_heavy_function(3)  # 'Hi, I was invoked ...' will be printed (noc is
     # reached, recompute the func value)
     time.sleep(2)  # get ttl expired
-    my_heavy_function(3) # 'Hi, I am called ...' will be printed again
+    my_heavy_function(3) # 'Hi, I was invoked ...' will be printed again
 
 One can encrypt the cached data by providing a non-empty `key` argument as
 a password (RSA encryption algorithm is used):
@@ -135,18 +139,18 @@ a password (RSA encryption algorithm is used):
     def my_heavy_function(x):
         '''Performs heavy computations'''
 
-        print('Hi, I am called...')
+        print('Hi, I was invoked...')
         return x**2
 
-    my_heavy_function(2) # 'Hi, I am called...' will be printed
-    my_heavy_function(2) # 'Hi, I am called...' will not be printed
+    my_heavy_function(2) # 'Hi, I was invoked...' will be printed
+    my_heavy_function(2) # 'Hi, I was invoked...' will not be printed
 
 When `my_heavy_function` is decorated by `cache_to_file_ttl_noc`, as shown
 in the example above, the value `2**2 = 4` will be computed and the result of
 the computation will be stored in the file named `mycache.dat`. Along
 with the result of the computation,  additional information will be stored
 in the file `mycache.dat`. The additional information includes:
-1) the result's expiration time (computed from the TTL), 
+1) the result's expiration time (computed from the TTL),
 2) NOC and 3) the number of already performed calls of the function being
 decorated (`my_heavy_function`).
 
@@ -155,24 +159,25 @@ Encryption is available only if `PyCryptodome` package is installed and the
 cache constructor. It also could work with the old PyCrypto package.
 
 If you passed the non-empty `key` parameter to the cache constructor
-but `PyCryptodome` was not found, a special warning would be raised in this case
-("PyCryptodome not installed. Data will not be encrypted") and
+but `PyCryptodome` was not found, a special warning would be raised in this
+case ("PyCryptodome not installed. Data will not be encrypted") and
 the cache would work as usual but without encryption functionality.
 
 
 Caching with limitations
 ------------------------
 
-Standard cache constructors are used to initialize caches of unlimited capacity.
-There are also caches of limited capacity.
-Such caches are initialized by constructors named `LimitedCache` and `LimitedFileCache`.
-These constructors have additional
+Standard cache constructors are used to initialize caches of unlimited
+capacity. There are also caches of limited capacity.
+Such caches are initialized by constructors named `LimitedCache` and
+`LimitedFileCache`. These constructors have additional
 parameters `cache_size` (the maximum number of items stored in the cache) and
 `algorithm` (cache-clearing algorithm). Available `algorithm` values are
-`lfu` (default, which stands for least frequently used) and `mfu` (most frequently used).
-When `algorithm='lfu'`, then the least frequently used item is removed from the cache,
-if it is exhausted. In case of `algorithm='mfu'`, everything behaves the same way,
-with the only difference being that the most frequently used item is removed.
+`lfu` (default, which stands for least frequently used) and `mfu` (most
+frequently used). When `algorithm='lfu'`, then the least frequently used item
+is removed from the cache, if it is exhausted. In case of `algorithm='mfu'`,
+everything behaves the same way, with the only difference being that the most
+frequently used item is removed.
 
 
 Testing
@@ -211,7 +216,7 @@ Log list
 import threading
 from .backends import (FileBackend, MemBackend, LimitedFileBackend,
                        LimitedMemBackend)
-from .utils import get_function_hash, PY3
+from .utils import get_function_hash
 from functools import wraps
 
 
@@ -242,27 +247,29 @@ _class_description = """{}
 """
 
 _class_titles = {
-    'Cache': 'Cache results of function execution in memory.', 
+    'Cache': 'Cache results of function execution in memory.',
     'FileCache': 'Caches results of function execution in a file.',
     'LimitedCache': """Caches the result of a function execution in memory.
     Uses cache of limited capacity.""",
-    'LimitedFileCache': """Caches the result of a function execution in a file.
-    Uses cache of limited capacity."""}
+    'LimitedFileCache': """Caches thgite result of a function execution in a
+    file. Uses cache of limited capacity."""}
 
 
-_class_extra_parameters = {'Cache': '', 
-'FileCache': """\
+_class_extra_parameters = {
+    'Cache': '',
+    'FileCache': """\
         :param filename: name of the file, where
                         the cached data will be stored;""",
-'LimitedCache': """\
+    'LimitedCache': """\
         :param cache_size: cache capacity; an integer number; if it is exeeded,
                         cached data is removed according to the algorithm
                         (either 'lfu' or 'mfu');
         :param algorithm: strategy of removing cached data; either `lfu`
-                          (least frequently used) or `mfu` (most frequently used)
-                          cached value is removed when cache is exhausted.
+                          (least frequently used) or `mfu` (most frequently
+                          used) cached value is removed when cache is
+                          exhausted.
 """,
-'LimitedFileCache': """\
+    'LimitedFileCache': """\
         :param filename: name of the file, where
                         the cached data will be stored;
         :param cache_size: cache capacity; an integer number; if it is exeeded,
@@ -331,7 +338,7 @@ class BaseCache(object):
 
 class Cache(BaseCache):
     __doc__ = _class_description.format(
-        _class_titles['Cache'], 
+        _class_titles['Cache'],
         _class_extra_parameters['Cache'])
 
     def __init__(self, key='', ttl=0, noc=0):
@@ -341,7 +348,7 @@ class Cache(BaseCache):
 
 class FileCache(BaseCache):
     __doc__ = _class_description.format(
-        _class_titles['FileCache'], 
+        _class_titles['FileCache'],
         _class_extra_parameters['FileCache'])
 
     def __init__(self, filename, key='', ttl=0, noc=0):
@@ -351,7 +358,7 @@ class FileCache(BaseCache):
 
 class LimitedCache(BaseCache):
     __doc__ = _class_description.format(
-        _class_titles['LimitedCache'], 
+        _class_titles['LimitedCache'],
         _class_extra_parameters['LimitedCache'])
 
     def __init__(self, key='', ttl=0, noc=0, **kwargs):
@@ -361,7 +368,7 @@ class LimitedCache(BaseCache):
 
 class LimitedFileCache(BaseCache):
     __doc__ = _class_description.format(
-        _class_titles['LimitedFileCache'], 
+        _class_titles['LimitedFileCache'],
         _class_extra_parameters['LimitedFileCache'])
 
     def __init__(self, filename, key='', ttl=0, noc=0, **kwargs):
