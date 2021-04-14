@@ -1,16 +1,18 @@
-language: python 
+language: python
 
 
 branches:
   only:
   - dev
-  - master
 
 matrix:
   include:
-    - name: "Python 3.7.1 on Xenial Linux"
+    - name: "Standard Python 3.9"
+      python: 3.9
+    - name: "Standard Python 3.8"
+      python: 3.8
+    - name: "Standard Python 3.7"
       python: 3.7
-      dist: xenial
     - name: "Standard Python 2.7"
       python: 2.7
     - name: "Standard Python 3.4"
