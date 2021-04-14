@@ -1,12 +1,12 @@
 Caching results of functions in Python
 ======================================
 
-.. image:: https://travis-ci.com/scidam/cachepy.svg?branch=dev
+.. image:: https://travis-ci.com/scidam/cachepy.svg?branch=master
     :target: https://travis-ci.com/scidam/cachepy
 
 
 A caching toolset for Python. It is tested for both
-Python 2.7.x and 3.4+ (<3.8).
+Python 2.7.x and 3.4+ (<3.10).
 
 Features
 --------
@@ -38,11 +38,11 @@ Examples
     def my_heavy_function(x):
         '''Performs heavy computations'''
 
-        print('Hi, I am called...')
+        print('Hi, I was invoked...')
         return x**2
 
     my_heavy_function(2)
-    # "Hi, I am called..." will be printed to stdout only once
+    # "Hi, I was invoked..." will be printed to stdout only once
     # return 4
 
     my_heavy_function(2)
@@ -75,18 +75,18 @@ for the cached data when the decorator is initialized:
     def my_heavy_function(x):
         '''Performs heavy computations'''
 
-        print('Hi, I am called...')
+        print('Hi, I was invoked...')
         return x**2
 
     my_heavy_function(3)
-    # Hi, I am called... will be printed
+    # Hi, I was invoked... will be printed
     # return 9
     my_heavy_function(3)
-    # 'Hi, I am called ...' will not be printed
+    # 'Hi, I was invoked ...' will not be printed
     # return 9
     time.sleep(2)
     my_heavy_function(3)
-    # 'Hi, I am called ...' will be printed again
+    # 'Hi, I was invoked ...' will be printed again
     # return 9
 
 
@@ -98,12 +98,12 @@ for the cached data when the decorator is initialized:
     def my_heavy_function(x):
         '''Performs heavy computations'''
 
-        print('Hi, I am called...')
+        print('Hi, I was invoked...')
         return x**2
 
     my_heavy_function(3)
-    my_heavy_function(3) # 'Hi, I am called ...' will not be printed
-    my_heavy_function(3) # 'Hi, I am called ...' will be printed again
+    my_heavy_function(3) # 'Hi, I was invoked ...' will not be printed
+    my_heavy_function(3) # 'Hi, I was invoked ...' will be printed again
 
 
 It is easy to use both `NOC` and `TTL` arguments when defining
@@ -117,15 +117,15 @@ a caching decorator:
     def my_heavy_function(x):
         '''Performs heavy computations'''
 
-        print('Hi, I am called...')
+        print('Hi, I was invoked...')
         return x**2
 
     my_heavy_function(3)
-    my_heavy_function(3)  # 'Hi, I am called ...' will not be printed
-    my_heavy_function(3)  # 'Hi, I am called ...' will be printed (noc is
+    my_heavy_function(3)  # 'Hi, I was invoked ...' will not be printed
+    my_heavy_function(3)  # 'Hi, I was invoked ...' will be printed (noc is
     # reached, recompute the func value)
     time.sleep(2)  # get ttl expired
-    my_heavy_function(3) # 'Hi, I am called ...' will be printed again
+    my_heavy_function(3) # 'Hi, I was invoked ...' will be printed again
 
 One can encrypt the cached data by providing a non-empty `key` argument as
 a password (RSA encryption algorithm is used):
@@ -140,18 +140,18 @@ a password (RSA encryption algorithm is used):
     def my_heavy_function(x):
         '''Performs heavy computations'''
 
-        print('Hi, I am called...')
+        print('Hi, I was invoked...')
         return x**2
 
-    my_heavy_function(2) # 'Hi, I am called...' will be printed
-    my_heavy_function(2) # 'Hi, I am called...' will not be printed
+    my_heavy_function(2) # 'Hi, I was invoked...' will be printed
+    my_heavy_function(2) # 'Hi, I was invoked...' will not be printed
 
 When `my_heavy_function` is decorated by `cache_to_file_ttl_noc`, as shown
 in the example above, the value `2**2 = 4` will be computed and the result of
 the computation will be stored in the file named `mycache.dat`. Along
 with the result of the computation,  additional information will be stored
 in the file `mycache.dat`. The additional information includes:
-1) the result's expiration time (computed from the TTL), 
+1) the result's expiration time (computed from the TTL),
 2) NOC and 3) the number of already performed calls of the function being
 decorated (`my_heavy_function`).
 
