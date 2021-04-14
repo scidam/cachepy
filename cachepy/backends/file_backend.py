@@ -30,9 +30,8 @@ class FileBackend(BaseBackend):
         if key in self.db:
             del self.db[key]
 
-    def store_data(self, data_key, data, key='', ttl=0, noc=0, ncalls=0):
-        super(FileBackend, self).store_data(data_key, data, key='',
-                                            ttl=0, noc=0, ncalls=0)
+    def store_data(self, *args, **kwargs):
+        super(FileBackend, self).store_data(*args, **kwargs)
         self.db.sync()
 
     def get(self, key, default=None):
